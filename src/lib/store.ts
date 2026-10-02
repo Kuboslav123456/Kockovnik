@@ -6,7 +6,7 @@ import { ACHIEVEMENTS, ACHIEVEMENT_MAP, ACHIEVEMENT_XP, levelFromXp, REWARDS } f
 const KEY = 'kockovnik:v1'
 
 const initial: AppState = {
-  version: 2,
+  version: 3,
   profiles: [],
   activeGame: null,
   history: [],
@@ -18,7 +18,7 @@ const PROFILE_DEFAULTS: Pick<Profile, 'keypadId' | 'burstId' | 'fontId' | 'sound
   keypadId: 'classic',
   burstId: 'float',
   fontId: 'classic',
-  soundId: 'classic',
+  soundId: 'medieval',
 }
 
 function load(): AppState {
@@ -34,7 +34,11 @@ function load(): AppState {
       profiles = profiles.map((p) => (p.themeId === 'wood' ? { ...p, themeId: 'manuscript' as const } : p))
       if (settings.menuThemeId === 'wood') settings = { ...settings, menuThemeId: 'manuscript' }
     }
-    return { ...initial, ...parsed, version: 2, profiles, settings }
+    // v2 → v3: stredoveké zvuky sú nové predvolené; klasické boli predvolené, nie vybrané
+    if ((parsed.version ?? 1) < 3) {
+      profiles = profiles.map((p) => (p.soundId === 'classic' ? { ...p, soundId: 'medieval' as const } : p))
+    }
+    return { ...initial, ...parsed, version: 3, profiles, settings }
   } catch {
     return initial
   }
@@ -87,7 +91,7 @@ export function createProfile(name: string, avatar: string, gender: Profile['gen
     keypadId: 'classic',
     burstId: 'float',
     fontId: 'classic',
-    soundId: 'classic',
+    soundId: 'medieval',
     createdAt: Date.now(),
   }
   setState((s) => ({ ...s, profiles: [...s.profiles, p] }))

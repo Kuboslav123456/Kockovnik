@@ -28,6 +28,7 @@ Predvolený vzhľad je stredoveký iluminovaný rukopis: pergamen, iniciály v r
 - Písma: IM Fell English (text, iniciály, logo) a IM Fell English SC (kapitálky). Nemajú slovenské znaky (č, š, ž, ť, ľ…), preto ich dopĺňa EB Garamond.
 - Gotické písmo (UnifrakturMaguntia) z pôvodného návrhu sa nepoužíva, lebo bolo zle čitateľné.
 - Rozloženie Domova a Hry je spoločné pre všetky témy. Témy menia farby, písma a dekor (tokeny v `src/lib/themes.ts`).
+- Zvuky sú predvolene **stredoveké**: loutna (fyzikálny model struny Karplus-Strong), zvon, bubon, fanfára trúbok, harfa, škrabnutie brka, šuchot pergamenu a hrkot kociek. Všetko sa skladá v kóde cez Web Audio, žiadne zvukové súbory.
 - Citát nad hodnotou („A Sofi hodila kockami a padlo jej…“) berie tvar slovies z profilu hráča. Ak rod nie je zadaný, použije sa neutrálne „Sofi hádže…“.
 
 ## Dobrodružstvo – čo sa odomyká

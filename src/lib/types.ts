@@ -4,7 +4,7 @@ export type EffectId = 'confetti' | 'fireworks' | 'goldrain'
 export type KeypadId = 'classic' | 'dice' | 'neon' | 'gold'
 export type BurstId = 'float' | 'explode' | 'lightning' | 'fire'
 export type FontId = 'classic' | 'chalk' | 'led'
-export type SoundId = 'classic' | 'retro' | 'casino'
+export type SoundId = 'medieval' | 'classic' | 'retro' | 'casino'
 
 export interface Profile {
   id: string
@@ -82,7 +82,7 @@ export interface GameResult {
 }
 
 export interface AppState {
-  version: 1 | 2
+  version: 1 | 2 | 3
   profiles: Profile[]
   activeGame: ActiveGame | null
   history: FinishedGame[]

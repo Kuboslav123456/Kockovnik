@@ -3,12 +3,17 @@ import type { SoundId } from './types'
 
 // Zvuky sú syntetizované cez Web Audio – žiadne súbory, funguje offline.
 let ctx: AudioContext | null = null
+/** vygenerované struny loutny/harfy sa držia pre aktuálny kontext */
+let plucks = new Map<string, AudioBuffer>()
 
 function audio(): AudioContext | null {
   if (!getState().settings.sound) return null
   try {
-    if (!ctx) ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
-    if (ctx.state === 'suspended') void ctx.resume()
+    if (!ctx || ctx.state === 'closed') {
+      ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+      plucks = new Map()
+    }
+    if (ctx.state === 'suspended') void ctx.resume().catch(() => {})
     return ctx
   } catch {
     return null
@@ -32,8 +37,8 @@ function tone(freq: number, start: number, dur: number, type: OscillatorType = '
   osc.stop(t0 + dur + 0.05)
 }
 
-/** Krátky šum – cvaknutie žetónu */
-function noise(start: number, dur: number, vol = 0.15, freq = 3000) {
+/** Krátky šum cez pásmový filter; voliteľne s posunom frekvencie (škrabnutie brka). */
+function noise(start: number, dur: number, vol = 0.15, freq = 3000, toFreq?: number, q = 1) {
   const a = audio()
   if (!a) return
   const t0 = a.currentTime + start
@@ -44,7 +49,9 @@ function noise(start: number, dur: number, vol = 0.15, freq = 3000) {
   src.buffer = buf
   const filter = a.createBiquadFilter()
   filter.type = 'bandpass'
-  filter.frequency.value = freq
+  filter.Q.value = q
+  filter.frequency.setValueAtTime(freq, t0)
+  if (toFreq) filter.frequency.exponentialRampToValueAtTime(toFreq, t0 + dur)
   const gain = a.createGain()
   gain.gain.value = vol
   src.connect(filter).connect(gain).connect(a.destination)
@@ -55,6 +62,125 @@ function noise(start: number, dur: number, vol = 0.15, freq = 3000) {
 function coin(start: number, vol = 0.1) {
   tone(1980, start, 0.09, 'sine', vol)
   tone(2640, start + 0.06, 0.35, 'sine', vol)
+}
+
+// ---------- Stredoveké nástroje ----------
+
+/** Brnknutie struny (Karplus-Strong): šum v slučke s oneskorením a priemerovaním znie ako loutna či harfa. */
+function pluck(freq: number, start: number, vol = 0.3, dur = 1.6, bright = 0.55) {
+  const a = audio()
+  if (!a) return
+  const key = `${freq.toFixed(2)}|${dur}|${bright}`
+  let buf = plucks.get(key)
+  if (!buf) {
+    const sr = a.sampleRate
+    const len = Math.floor(sr * dur)
+    buf = a.createBuffer(1, len, sr)
+    const d = buf.getChannelData(0)
+    const n = Math.max(2, Math.round(sr / freq))
+    let lp = 0
+    for (let i = 0; i < n; i++) {
+      lp += bright * (Math.random() * 2 - 1 - lp)
+      d[i] = lp
+    }
+    for (let i = n; i < len; i++) d[i] = 0.996 * 0.5 * (d[i - n] + (i - n - 1 >= 0 ? d[i - n - 1] : 0))
+    let peak = 0
+    for (let i = 0; i < len; i++) peak = Math.max(peak, Math.abs(d[i]))
+    const fade = Math.floor(sr * 0.05)
+    for (let i = 0; i < len; i++) d[i] = (d[i] / (peak || 1)) * (i > len - fade ? (len - i) / fade : 1)
+    plucks.set(key, buf)
+  }
+  const t0 = a.currentTime + start
+  const src = a.createBufferSource()
+  src.buffer = buf
+  // teplé drevené telo nástroja
+  const body = a.createBiquadFilter()
+  body.type = 'peaking'
+  body.frequency.value = 260
+  body.Q.value = 1.2
+  body.gain.value = 5
+  const lp = a.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.value = 3800
+  const g = a.createGain()
+  g.gain.value = vol
+  src.connect(body).connect(lp).connect(g).connect(a.destination)
+  src.start(t0)
+}
+
+/** Zvon: neharmonické alikvoty skutočného zvona (hum, prima, tercia, kvinta…) s rôznym dozvukom. */
+function bell(freq: number, start: number, vol = 0.12, dur = 2.6) {
+  const a = audio()
+  if (!a) return
+  const t0 = a.currentTime + start
+  const partials: [number, number, number][] = [
+    [0.5, 0.5, 1], [1, 1, 0.8], [1.19, 0.5, 0.55], [1.5, 0.35, 0.45], [2, 0.45, 0.4], [2.51, 0.22, 0.28], [2.66, 0.18, 0.25], [3.01, 0.2, 0.2], [4.1, 0.1, 0.15],
+  ]
+  partials.forEach(([ratio, amp, life]) => {
+    const osc = a.createOscillator()
+    const g = a.createGain()
+    osc.frequency.value = freq * ratio
+    g.gain.setValueAtTime(0.0001, t0)
+    g.gain.exponentialRampToValueAtTime(vol * amp, t0 + 0.004)
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur * life)
+    osc.connect(g).connect(a.destination)
+    osc.start(t0)
+    osc.stop(t0 + dur * life + 0.05)
+  })
+}
+
+/** Heroldská trúbka: dva rozladené pílovité tóny, filter, ktorý sa pri nástupe otvorí, a vibrato. */
+function brass(freq: number, start: number, dur: number, vol = 0.09) {
+  const a = audio()
+  if (!a) return
+  const t0 = a.currentTime + start
+  const filter = a.createBiquadFilter()
+  filter.type = 'lowpass'
+  filter.Q.value = 2
+  filter.frequency.setValueAtTime(350, t0)
+  filter.frequency.exponentialRampToValueAtTime(2600, t0 + 0.06)
+  filter.frequency.exponentialRampToValueAtTime(1500, t0 + Math.min(dur, 0.3))
+  const g = a.createGain()
+  g.gain.setValueAtTime(0.0001, t0)
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.04)
+  g.gain.setValueAtTime(vol * 0.85, t0 + Math.max(0.05, dur - 0.08))
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.12)
+  filter.connect(g).connect(a.destination)
+  const lfo = a.createOscillator()
+  const lfoGain = a.createGain()
+  lfo.frequency.value = 5.5
+  lfoGain.gain.setValueAtTime(0, t0)
+  lfoGain.gain.linearRampToValueAtTime(freq * 0.007, t0 + Math.min(dur, 0.25))
+  lfo.connect(lfoGain)
+  ;[-6, 6].forEach((cents) => {
+    const osc = a.createOscillator()
+    osc.type = 'sawtooth'
+    osc.frequency.value = freq
+    osc.detune.value = cents
+    lfoGain.connect(osc.frequency)
+    osc.connect(filter)
+    osc.start(t0)
+    osc.stop(t0 + dur + 0.2)
+  })
+  lfo.start(t0)
+  lfo.stop(t0 + dur + 0.2)
+}
+
+/** Tlmený bubon (tabor) */
+function drum(start: number, vol = 0.35) {
+  tone(130, start, 0.32, 'sine', vol, 48)
+  noise(start, 0.09, vol * 0.5, 220, undefined, 0.8)
+}
+
+/** Ťuk dreva o stôl */
+function wood(start: number, vol = 0.12, pitch = 1) {
+  noise(start, 0.025, vol, 2100 * pitch, undefined, 4)
+  tone(780 * pitch, start, 0.035, 'triangle', vol * 0.5, 560 * pitch)
+}
+
+// Tóny: D dórska stupnica (stredoveký modus) a D dur pre fanfáru
+const N = {
+  A3: 220, D4: 293.66, F4: 349.23, A4: 440, D5: 587.33, E5: 659.25, Fs5: 739.99, F5: 698.46, G5: 783.99, A5: 880, B5: 987.77, Cs6: 1108.73, D6: 1174.66,
 }
 
 export function haptic(pattern: number | number[]) {
@@ -78,6 +204,35 @@ type Pack = {
 }
 
 const PACKS: Record<SoundId, Pack> = {
+  medieval: {
+    tap: () => wood(0, 0.13, 0.9 + Math.random() * 0.2),
+    add: (points) => {
+      const notes = [N.A4, N.D5, N.F5, N.A5, N.D6]
+      const count = points >= 1000 ? 5 : points >= 500 ? 3 : 2
+      notes.slice(0, count).forEach((f, i) => pluck(f, i * 0.07, 0.24 - i * 0.02))
+      if (points >= 1000) bell(N.D5, 0.38, 0.1)
+    },
+    zero: () => {
+      ;[N.F4, N.D4, N.A3].forEach((f, i) => pluck(f, i * 0.17, 0.2, 1.4, 0.4))
+      drum(0.5, 0.18)
+    },
+    undo: () => noise(0, 0.13, 0.24, 2600, 6200, 3),
+    error: () => {
+      drum(0, 0.3)
+      drum(0.15, 0.22)
+    },
+    win: () => {
+      drum(0, 0.3)
+      drum(0.15, 0.22)
+      const fanfare: [number, number, number][] = [
+        [N.A4, 0.3, 0.1], [N.D5, 0.42, 0.1], [N.Fs5, 0.54, 0.1], [N.A5, 0.66, 0.45], [N.Fs5, 1.16, 0.14], [N.A5, 1.32, 0.8],
+      ]
+      fanfare.forEach(([f, t, d]) => brass(f, t, d))
+      fanfare.forEach(([f, t, d]) => brass(f / 2, t, d, 0.05))
+      drum(1.32, 0.35)
+      bell(N.D5, 1.4, 0.12, 3)
+    },
+  },
   classic: {
     tap: () => tone(900, 0, 0.05, 'triangle', 0.06),
     add: (points) => {
@@ -131,40 +286,58 @@ const PACKS: Record<SoundId, Pack> = {
 }
 
 export const sfx = {
-  tap(pack: SoundId = 'classic') {
+  tap(pack: SoundId = 'medieval') {
     PACKS[pack].tap()
     haptic(8)
   },
-  add(points: number, pack: SoundId = 'classic') {
+  add(points: number, pack: SoundId = 'medieval') {
     PACKS[pack].add(points)
     haptic(points >= 1000 ? [20, 40, 30] : 15)
   },
-  zero(pack: SoundId = 'classic') {
+  zero(pack: SoundId = 'medieval') {
     PACKS[pack].zero()
     haptic([40, 60, 40])
   },
-  undo(pack: SoundId = 'classic') {
+  undo(pack: SoundId = 'medieval') {
     PACKS[pack].undo()
     haptic(10)
   },
-  error(pack: SoundId = 'classic') {
+  error(pack: SoundId = 'medieval') {
     PACKS[pack].error()
     haptic([30, 40, 30])
   },
-  win(pack: SoundId = 'classic') {
+  win(pack: SoundId = 'medieval') {
     PACKS[pack].win()
     haptic([60, 50, 60, 50, 200])
   },
   thunder() {
     noise(0, 0.6, 0.25, 400)
+    drum(0.05, 0.3)
     haptic([60, 30, 120])
   },
+  /** nová úroveň – glissando na harfe */
   levelUp() {
-    ;[784, 988, 1175, 1568].forEach((f, i) => tone(f, i * 0.08, 0.4, 'sine', 0.14))
+    ;[N.D5, N.E5, N.Fs5, N.G5, N.A5, N.B5, N.Cs6, N.D6].forEach((f, i) => pluck(f, i * 0.045, 0.2, 1.8, 0.75))
     haptic([30, 30, 80])
   },
+  /** otočenie karty – šuchot pergamenu */
   flip() {
-    tone(500, 0, 0.15, 'triangle', 0.08, 1200)
+    for (let i = 0; i < 4; i++) noise(i * 0.045 + Math.random() * 0.02, 0.06, 0.1, 3500 + Math.random() * 2500, undefined, 0.7)
     haptic(12)
+  },
+  /** hrkot kociek po stole */
+  dice() {
+    let t = 0
+    for (let i = 0; i < 7; i++) {
+      wood(t, 0.16 * (1 - i / 9), 0.8 + Math.random() * 0.6)
+      t += 0.04 + Math.random() * 0.07
+    }
+    haptic([10, 30, 10, 30, 10])
+  },
+  /** buchnutie voskovej pečate */
+  seal() {
+    drum(0, 0.32)
+    wood(0.01, 0.08, 0.6)
+    haptic(40)
   },
 }

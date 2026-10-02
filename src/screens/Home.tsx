@@ -26,7 +26,7 @@ export function Home() {
   ]
 
   const roll = () => {
-    sfx.flip()
+    sfx.dice()
     void wiggle.start({ rotate: [0, -9, 8, -5, 3, 0], scale: [1, 1.06, 1], transition: { duration: 0.55 } })
   }
 

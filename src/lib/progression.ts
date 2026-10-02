@@ -75,6 +75,7 @@ export const FONTS: Record<FontId, { name: string; icon: string; desc: string; c
 
 /** Zvukový balíček počas ťahu */
 export const SOUNDS: Record<SoundId, { name: string; icon: string; desc: string }> = {
+  medieval: { name: 'Stredoveké', icon: '🪕', desc: 'Loutna, zvony, bubny a fanfáry' },
   classic: { name: 'Klasické', icon: '🔔', desc: 'Jemné cinknutia' },
   retro: { name: '8-bit', icon: '👾', desc: 'Zvuky starých automatov' },
   casino: { name: 'Kasíno', icon: '🎰', desc: 'Cinkot mincí a žetónov' },
@@ -170,7 +171,7 @@ export function unlockedFor(profile: Pick<Profile, 'xp'>) {
     keypads: ['classic' as KeypadId, ...ids('keypad')],
     bursts: ['float' as BurstId, ...ids('burst')],
     fonts: ['classic' as FontId, ...ids('font')],
-    sounds: ['classic' as SoundId, ...ids('sound')],
+    sounds: ['medieval' as SoundId, 'classic' as SoundId, ...ids('sound')],
     avatars,
     dice: got.some((r) => r.kind === 'dice'),
     frame: got.some((r) => r.kind === 'frame'),
@@ -185,7 +186,7 @@ export function cosmetics(profile: Profile | undefined) {
     keypadId: 'classic' as KeypadId,
     burstId: 'float' as BurstId,
     fontId: 'classic' as FontId,
-    soundId: 'classic' as SoundId,
+    soundId: 'medieval' as SoundId,
     dice: false,
     titleId: null as string | null,
   }

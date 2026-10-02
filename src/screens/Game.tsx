@@ -18,7 +18,7 @@ const ROMAN_KEYS: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III' }
 
 const UNKNOWN: Omit<Profile, 'id'> = {
   name: '?', avatar: '❔', xp: 0, achievements: [], themeId: 'manuscript', titleId: null, effectId: 'confetti',
-  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'classic', createdAt: 0,
+  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'medieval', createdAt: 0,
 }
 
 /** Rozdelí meno na iniciálu a zvyšok (správne aj pre znaky mimo BMP). */
@@ -436,6 +436,7 @@ function WinModal({ game, winner, total, onConfirm, onUndo }: { game: ActiveGame
           animate={{ y: 0, rotate: -12, opacity: 1 }}
           transition={{ delay: 0.15, type: 'spring', stiffness: 320, damping: 11 }}
           onAnimationComplete={() => {
+            sfx.seal()
             // po dopade pečate – efekt víťaza (na obrazovke výhry sa už neopakuje)
             const c = cosmetics(winner)
             const v = THEMES[c.themeId].vars
