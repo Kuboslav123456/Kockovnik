@@ -8,7 +8,7 @@ import { cosmetics, FONTS, TITLES } from '../lib/progression'
 import { markEffectPlayed, playEffect } from '../lib/effects'
 import { THEMES } from '../lib/themes'
 import type { ActiveGame, BurstId, KeypadId, Profile } from '../lib/types'
-import { AnimatedNumber, Btn } from '../components/ui'
+import { AnimatedNumber, Btn, HistoricHome } from '../components/ui'
 import { Sheet } from '../components/Sheet'
 import { Burst } from '../components/Burst'
 
@@ -174,7 +174,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
       {/* Horná lišta */}
       <div className="flex items-baseline gap-1 px-3" style={{ paddingTop: 'calc(max(env(safe-area-inset-top), 12px) + 18px)' }}>
         <button className="grid h-11 w-11 shrink-0 place-items-center self-center text-xl text-muted" onClick={() => { sfx.tap(); nav.reset({ name: 'home' }) }} aria-label="Domov">
-          ⌂
+          <HistoricHome />
         </button>
         <motion.span
           key={d.round}

@@ -68,6 +68,24 @@ export function HistoricArrow({ className = '' }: { className?: string }) {
   )
 }
 
+/** Hradná veža namiesto domčeka: cimburie, oblúková brána a strieľňa. Kreslí sa farbou textu. */
+export function HistoricHome({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width="24" height="24" className={className} aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round">
+        {/* cimburie a telo veže */}
+        <path d="M4.5 21 V5 H7.5 V7.5 H10.5 V5 H13.5 V7.5 H16.5 V5 H19.5 V21 Z" />
+        {/* oblúková brána */}
+        <path d="M9.75 21 V16.75 A2.25 2.25 0 0 1 14.25 16.75 V21" />
+        {/* strieľňa */}
+        <path d="M12 10.25 V12.75" />
+        {/* zem */}
+        <path d="M2.5 21 H21.5" />
+      </g>
+    </svg>
+  )
+}
+
 export function Screen({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`mx-auto flex min-h-full w-full max-w-md flex-col ${className}`}>{children}</div>
 }
