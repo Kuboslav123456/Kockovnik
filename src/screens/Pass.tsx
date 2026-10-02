@@ -24,7 +24,7 @@ export function Pass({ initialId }: { initialId?: string }) {
   if (!profile) {
     return (
       <Screen>
-        <Header title="Kockový pas" />
+        <Header title="Dobrodružstvo" />
         <div className="px-6 py-16 text-center text-muted">
           Najprv si založ profil hráča.
           <Btn variant="accent" className="mt-4 w-full" onClick={() => nav.go({ name: 'profiles' })}>
@@ -54,7 +54,7 @@ export function Pass({ initialId }: { initialId?: string }) {
 
   return (
     <Screen className="safe-bottom">
-      <Header title="Kockový pas" />
+      <Header title="Dobrodružstvo" />
 
       {app.profiles.length > 1 && (
         <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-3">

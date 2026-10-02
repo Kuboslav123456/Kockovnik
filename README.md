@@ -30,7 +30,7 @@ Predvolený vzhľad je stredoveký iluminovaný rukopis: pergamen, iniciály v r
 - Rozloženie Domova a Hry je spoločné pre všetky témy. Témy menia farby, písma a dekor (tokeny v `src/lib/themes.ts`).
 - Citát nad hodnotou („A Sofi hodila kockami a padlo jej…“) berie tvar slovies z profilu hráča. Ak rod nie je zadaný, použije sa neutrálne „Sofi hádže…“.
 
-## Kockový pas – čo sa odomyká
+## Dobrodružstvo – čo sa odomyká
 
 Hrá sa na jednom mobile, takže väčšina odmien sa ukazuje **počas ťahu hráča**: keď má mobil v ruke Sofi, všetci vidia jej tému stola, klávesnicu, animáciu bodov, písmo aj zvuky. Nová odmena sa po odomknutí zapne sama (okrem tém stola, tie si hráč vyberie v profile), v profile sa dá všetko zmeniť.
 
@@ -65,7 +65,7 @@ XP: účasť +20, výhra +100, najvyšší ťah hry +15, comeback +30, každý n
 - `src/lib/progression.ts`: XP krivka, úrovne, odmeny (témy, avatary, tituly, efekty) a achievementy. **Tu sa upravujú odmeny.**
 - `src/lib/store.ts`: stav v localStorage + akcie (profily, hra, uzavretie hry a rozdanie XP).
 - `src/lib/themes.ts`: farebné témy stola.
-- `src/screens/*`: obrazovky (Domov, Nová hra, Hra, Výhra, Profily, Profil, Kockový pas, Štatistiky).
+- `src/screens/*`: obrazovky (Domov, Nová hra, Hra, Výhra, Profily, Profil, Dobrodružstvo, Štatistiky).
 
 ## Poznámka k nástrojom
 

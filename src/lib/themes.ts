@@ -27,6 +27,8 @@ type Vars = {
   '--t-font-display': string
   '--t-font-caps': string
   '--t-display-weight': string
+  /** hrúbka kapitálok (tlačidlá, navigácia, labely) */
+  '--t-caps-weight': string
 }
 
 export interface Theme {
@@ -54,6 +56,7 @@ const glassFonts = {
   '--t-font-body': SANS,
   '--t-font-display': SANS,
   '--t-font-caps': SANS,
+  '--t-caps-weight': '600',
   '--t-display-weight': '900',
 }
 
@@ -92,7 +95,8 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--t-input': 'rgba(255, 249, 232, 0.55)',
       '--t-font-body': "'IM Fell English', 'EB Garamond', Georgia, serif",
       '--t-font-display': "'IM Fell English', 'EB Garamond', Georgia, serif",
-      '--t-font-caps': "'IM Fell English SC', 'EB Garamond', Georgia, serif",
+      '--t-font-caps': "'EB Garamond', 'IM Fell English SC', Georgia, serif",
+      '--t-caps-weight': '600',
       '--t-display-weight': '400',
     },
   },

@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { fmt } from '../lib/game'
 import type { BurstId } from '../lib/types'
 
-/** Animácia nad kartou hráča po zapísaní bodov. Typ si hráč odomyká v Kockovom pase. */
+/** Animácia nad kartou hráča po zapísaní bodov. Typ si hráč odomyká v Dobrodružstve. */
 export function Burst({ burst, points, onDone }: { burst: BurstId; points: number; onDone: () => void }) {
   const label = `+${fmt(points)}`
 

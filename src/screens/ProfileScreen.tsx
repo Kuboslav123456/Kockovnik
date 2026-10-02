@@ -96,7 +96,7 @@ function ProfileView({ profile }: { profile: Profile }) {
           ))}
         </div>
         <Btn className="mt-2 w-full" onClick={() => nav.go({ name: 'pass', id: profile.id })}>
-          🗺️ Kockový pas
+          🗺️ Dobrodružstvo
         </Btn>
       </Section>
 

@@ -114,7 +114,7 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
           </motion.div>
         ) : (
           <motion.div key="r" className="flex flex-1 flex-col" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="font-caps mb-4 mt-2 text-center text-3xl tracking-wide">Kockový pas</h1>
+            <h1 className="font-caps mb-4 mt-2 text-center text-3xl tracking-wide">Dobrodružstvo</h1>
             <div className="flex flex-col gap-3">
               {ordered.map((r, i) => {
                 const p = byId(r.playerId)

@@ -21,7 +21,7 @@ export function Home() {
 
   const links: { label: string; to: Route }[] = [
     { label: 'Družina', to: { name: 'profiles' } },
-    { label: 'Pas', to: { name: 'pass' } },
+    { label: 'Dobrodružstvo', to: { name: 'pass' } },
     { label: 'Letopisy', to: { name: 'stats' } },
   ]
 
@@ -102,7 +102,7 @@ export function Home() {
         </motion.button>
       </motion.div>
 
-      <motion.nav custom={5} variants={rise} initial="hidden" animate="show" className="font-caps relative mx-[38px] mt-[18px] flex justify-between text-[15px] text-muted">
+      <motion.nav custom={5} variants={rise} initial="hidden" animate="show" className="font-caps relative mx-[30px] mt-[18px] flex justify-between text-base text-ink">
         {links.map((l) => (
           <motion.button
             key={l.label}
@@ -118,7 +118,7 @@ export function Home() {
         ))}
       </motion.nav>
 
-      <motion.div custom={6} variants={rise} initial="hidden" animate="show" className="font-caps relative mx-[38px] mt-4 border-t border-rule pt-3 text-[13px] text-muted">
+      <motion.div custom={6} variants={rise} initial="hidden" animate="show" className="font-caps relative mx-[38px] mt-4 border-t border-rule pt-3 text-sm text-ink">
         <div className="flex flex-wrap justify-center gap-x-4">
           {toggles.map((t) => (
             <button
@@ -129,13 +129,13 @@ export function Home() {
                 sfx.tap()
               }}
             >
-              {t.label} <span className={t.on ? 'text-accent' : 'text-faint'}>{t.on ? '✓' : '✗'}</span>
+              {t.label} <span className={t.on ? 'text-accent' : 'text-muted'}>{t.on ? '✓' : '✗'}</span>
             </button>
           ))}
         </div>
         {menuThemes.length > 1 && (
           <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-0">
-            <span className="min-h-11 content-center text-faint">Téma:</span>
+            <span className="min-h-11 content-center text-muted">Téma:</span>
             {menuThemes.map((t) => (
               <button
                 key={t}
