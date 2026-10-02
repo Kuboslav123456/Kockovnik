@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNav } from '../nav'
 import { startGame, useApp } from '../lib/store'
 import { deriveGame, fmt } from '../lib/game'
-import { ACHIEVEMENT_MAP, levelFromXp, levelProgress, REWARDS, type Reward } from '../lib/progression'
+import { ACHIEVEMENT_MAP, cosmetics, KIND_LABEL, levelFromXp, levelProgress, REWARDS, type Reward } from '../lib/progression'
 import { playEffect } from '../lib/effects'
 import { sfx } from '../lib/sound'
 import { THEMES } from '../lib/themes'
@@ -15,8 +15,9 @@ export function Victory() {
   const app = useApp()
   const result = app.lastResult
 
+  // presmerovať smie len aktívna obrazovka – odchádzajúca (počas animácie) nie
   useEffect(() => {
-    if (!result) nav.reset({ name: 'home' })
+    if (!result && nav.route.name === 'victory') nav.reset({ name: 'home' })
   }, [result]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!result) return null
@@ -35,8 +36,9 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
   useEffect(() => {
     if (played.current || !winner) return
     played.current = true
-    const t = THEMES[winner.themeId].vars
-    playEffect(winner.effectId, [t['--t-accent'], t['--t-accent2'], '#ffffff'])
+    const c = cosmetics(winner)
+    const t = THEMES[c.themeId].vars
+    playEffect(c.effectId, [t['--t-accent'], t['--t-accent2'], '#ffffff'])
   }, [winner])
 
   const best = game.turns.reduce((a, t) => (t.points > a.points ? t : a), { playerId: '', points: 0 })
@@ -53,9 +55,8 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
 
   return (
     <div className="safe-top safe-bottom mx-auto flex min-h-full w-full max-w-md flex-col px-4">
-      <AnimatePresence mode="wait">
-        {phase === 'celebrate' ? (
-          <motion.div key="c" className="flex flex-1 flex-col" exit={{ opacity: 0, y: -30 }} transition={{ duration: 0.3 }}>
+      {phase === 'celebrate' ? (
+          <motion.div key="c" className="flex flex-1 flex-col">
             <div className="relative mt-6 flex flex-col items-center text-center">
               <motion.div
                 className="absolute top-0 h-64 w-64 rounded-full opacity-60"
@@ -129,7 +130,6 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
     </div>
   )
 }
@@ -233,6 +233,9 @@ function RewardCard({ result, profile, delay }: { result: PlayerResult; profile:
                     <FlipCard key={r.level + r.kind + r.id} reward={r} delay={i * 0.15} />
                   ))}
                 </div>
+                <div className="mt-1 text-[11px] text-muted">
+                  Nové veci sa zapnú samé. Zmeniť ich môžeš v profile, všetci ich uvidia počas tvojho ťahu.
+                </div>
               </>
             )}
             {result.newAchievements.length > 0 && (
@@ -305,6 +308,7 @@ function FlipCard({ reward, delay }: { reward: Reward; delay: number }) {
           className="themed glass-strong glow absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-2xl p-2 text-center"
           style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
         >
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-accent">{KIND_LABEL[reward.kind]}</span>
           <span className="text-4xl">{reward.icon}</span>
           <span className="text-xs font-bold leading-tight">{reward.name}</span>
           <span className="line-clamp-3 text-[10px] leading-tight text-muted">{reward.desc}</span>

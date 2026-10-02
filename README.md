@@ -21,6 +21,35 @@ npm run build
 Výstup je v `dist/` (statické súbory, dajú sa nahrať na ľubovoľný hosting).
 Ako PWA (ikona na ploche, offline režim) appka funguje naplno až cez HTTPS.
 
+## Kockový pas – čo sa odomyká
+
+Hrá sa na jednom mobile, takže väčšina odmien sa ukazuje **počas ťahu hráča**: keď má mobil v ruke Sofi, všetci vidia jej tému stola, klávesnicu, animáciu bodov, písmo aj zvuky. Nová odmena sa po odomknutí zapne sama a v profile sa dá zmeniť.
+
+| Úroveň | Odmena |
+|---|---|
+| 1 | Téma Tmavé drevo |
+| 2 | Nové avatary |
+| 3 | Téma Kasíno |
+| 4 | Klávesnica: Kockové klávesy, titul Kockový šľachtic |
+| 5 | Efekt výhry: Ohňostroj |
+| 6 | Animácia bodov: Explózia |
+| 7 | Téma Neón |
+| 8 | Kocky v pozadí |
+| 9 | Písmo čísel: Krieda |
+| 10 | Téma Vesmír, titul Pán kociek |
+| 11 | Zvuky: 8-bit |
+| 12 | Klávesnica: Neónová |
+| 13 | Nové avatary |
+| 14 | Animácia bodov: Blesk |
+| 15 | Zlatý rámik, titul Kockový mág |
+| 16 | Písmo čísel: Digitálne |
+| 17 | Efekt výhry: Zlatý dážď |
+| 18 | Klávesnica: Zlatá, titul Legenda stola |
+| 19 | Nové avatary, zvuky Kasíno |
+| 20 | Téma Drak, animácia bodov Dračí oheň |
+
+XP: účasť +20, výhra +100, najvyšší ťah hry +15, comeback +30, každý nový odznak +25.
+
 ## Štruktúra
 
 - `src/lib/game.ts`: odvodenie stavu hry z poľa ťahov (súčty, hráč na ťahu, posledné kolo, víťaz). Undo = odobratie posledného ťahu.

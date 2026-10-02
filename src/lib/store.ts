@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { ActiveGame, AppState, FinishedGame, GameResult, GameRules, PlayerResult, Profile, Settings, XpLine } from './types'
 import { deriveGame, wasLastAtSomePoint } from './game'
-import { ACHIEVEMENTS, ACHIEVEMENT_MAP, ACHIEVEMENT_XP } from './progression'
+import { ACHIEVEMENTS, ACHIEVEMENT_MAP, ACHIEVEMENT_XP, levelFromXp, REWARDS } from './progression'
 
 const KEY = 'kockovnik:v1'
 
@@ -14,12 +14,21 @@ const initial: AppState = {
   lastResult: null,
 }
 
+const PROFILE_DEFAULTS: Pick<Profile, 'keypadId' | 'burstId' | 'fontId' | 'soundId'> = {
+  keypadId: 'classic',
+  burstId: 'float',
+  fontId: 'classic',
+  soundId: 'classic',
+}
+
 function load(): AppState {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return initial
     const parsed = JSON.parse(raw) as AppState
-    return { ...initial, ...parsed, settings: { ...initial.settings, ...parsed.settings } }
+    // staršie profily nemajú nové kozmetické polia
+    const profiles = (parsed.profiles ?? []).map((p) => ({ ...PROFILE_DEFAULTS, ...p }))
+    return { ...initial, ...parsed, profiles, settings: { ...initial.settings, ...parsed.settings } }
   } catch {
     return initial
   }
@@ -68,6 +77,10 @@ export function createProfile(name: string, avatar: string): Profile {
     titleId: null,
     effectId: 'confetti',
     diceBackground: true,
+    keypadId: 'classic',
+    burstId: 'float',
+    fontId: 'classic',
+    soundId: 'classic',
     createdAt: Date.now(),
   }
   setState((s) => ({ ...s, profiles: [...s.profiles, p] }))
@@ -154,8 +167,26 @@ export function finishGame(): GameResult | null {
     lastResult: result,
     profiles: st.profiles.map((p) => {
       const r = players.find((x) => x.playerId === p.id)
-      return r ? { ...p, xp: r.xpAfter, achievements: [...p.achievements, ...r.newAchievements] } : p
+      return r ? { ...p, ...autoEquip(p, r.xpAfter), xp: r.xpAfter, achievements: [...p.achievements, ...r.newAchievements] } : p
     }),
   }))
   return result
+}
+
+/** Čerstvo odomknuté veci sa hneď zapnú, aby ich stôl videl už v ďalšej hre. */
+function autoEquip(p: Profile, xpAfter: number): Partial<Profile> {
+  const from = levelFromXp(p.xp)
+  const to = levelFromXp(xpAfter)
+  const patch: Partial<Profile> = {}
+  REWARDS.filter((r) => r.level > from && r.level <= to).forEach((r) => {
+    if (r.kind === 'theme') patch.themeId = r.id
+    if (r.kind === 'effect') patch.effectId = r.id
+    if (r.kind === 'keypad') patch.keypadId = r.id
+    if (r.kind === 'burst') patch.burstId = r.id
+    if (r.kind === 'font') patch.fontId = r.id
+    if (r.kind === 'sound') patch.soundId = r.id
+    if (r.kind === 'title') patch.titleId = r.id
+    if (r.kind === 'dice') patch.diceBackground = true
+  })
+  return patch
 }

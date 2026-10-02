@@ -1,12 +1,14 @@
-import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNav } from '../nav'
 import { deleteProfile, updateProfile, useApp } from '../lib/store'
 import { fmt, playerStats } from '../lib/game'
-import { ACHIEVEMENTS, AVATAR_PACKS, EFFECTS, REWARDS, TITLES, unlockedFor } from '../lib/progression'
+import { ACHIEVEMENTS, AVATAR_PACKS, BURSTS, EFFECTS, FONTS, KEYPADS, REWARDS, SOUNDS, TITLES, unlockedFor } from '../lib/progression'
 import { THEMES, THEME_ORDER } from '../lib/themes'
 import { playEffect } from '../lib/effects'
-import type { EffectId, Profile } from '../lib/types'
+import type { BurstId, EffectId, FontId, KeypadId, Profile, SoundId } from '../lib/types'
+import { sfx } from '../lib/sound'
+import { Burst } from '../components/Burst'
 import { Avatar, Btn, Header, Screen, Section, Toggle, XpBar } from '../components/ui'
 
 export function ProfileScreen({ id }: { id: string }) {
@@ -31,6 +33,7 @@ function ProfileView({ profile }: { profile: Profile }) {
   const s = playerStats(app.history, profile.id)
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(profile.name)
+  const [demo, setDemo] = useState<{ burst: BurstId; key: number } | null>(null)
   const set = (patch: Partial<Profile>) => updateProfile(profile.id, patch)
   const inGame = app.activeGame?.playerIds.includes(profile.id)
 
@@ -141,7 +144,105 @@ function ProfileView({ profile }: { profile: Profile }) {
         </div>
       </Section>
 
-      <Section title="Titul" className="mt-6">
+      <div className="mt-8 px-5">
+        <div className="text-lg font-bold">Počas tvojho ťahu</div>
+        <div className="text-xs text-muted">Toto uvidia všetci pri stole, keď máš mobil v ruke ty.</div>
+      </div>
+
+      <Section title="Klávesnica" className="mt-3">
+        <Choices
+          options={(Object.keys(KEYPADS) as KeypadId[]).map((k) => ({
+            id: k,
+            name: KEYPADS[k].name,
+            open: u.keypads.includes(k),
+            lock: lockLevel('keypad', k),
+            preview: (
+              <div className="grid grid-cols-3 gap-1">
+                {['1', '5', '0'].map((n) => (
+                  <span key={n} className={`key key-${k} grid h-8 w-9 place-items-center text-sm font-bold`}>
+                    {n}
+                  </span>
+                ))}
+              </div>
+            ),
+          }))}
+          selected={profile.keypadId}
+          onSelect={(k) => {
+            sfx.tap(profile.soundId)
+            set({ keypadId: k })
+          }}
+        />
+      </Section>
+
+      <Section title="Animácia bodov" className="mt-5">
+        <div className="themed glass relative mb-2 h-20 overflow-visible rounded-3xl">
+          <div className="absolute inset-0 grid place-items-center text-xs text-muted">Ťukni na animáciu pre ukážku</div>
+          <AnimatePresence>
+            {demo && (
+              <motion.div key={demo.key} className="absolute inset-0" exit={{ opacity: 0 }}>
+                <Burst burst={demo.burst} points={500} onDone={() => setDemo(null)} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        <Choices
+          options={(Object.keys(BURSTS) as BurstId[]).map((b) => ({
+            id: b,
+            name: BURSTS[b].name,
+            open: u.bursts.includes(b),
+            lock: lockLevel('burst', b),
+            preview: <span className="text-2xl">{BURSTS[b].icon}</span>,
+          }))}
+          selected={profile.burstId}
+          onSelect={(b) => {
+            set({ burstId: b })
+            if (b === 'lightning') sfx.thunder()
+            sfx.add(500, profile.soundId)
+            setDemo({ burst: b, key: Date.now() })
+          }}
+        />
+      </Section>
+
+      <Section title="Písmo čísel" className="mt-5">
+        <Choices
+          options={(Object.keys(FONTS) as FontId[]).map((f) => ({
+            id: f,
+            name: FONTS[f].name,
+            open: u.fonts.includes(f),
+            lock: lockLevel('font', f),
+            preview: <span className={`inline-block text-2xl font-black ${FONTS[f].className}`}>2 350</span>,
+          }))}
+          selected={profile.fontId}
+          onSelect={(f) => set({ fontId: f })}
+        />
+      </Section>
+
+      <Section title="Zvuky" className="mt-5">
+        <Choices
+          options={(Object.keys(SOUNDS) as SoundId[]).map((snd) => ({
+            id: snd,
+            name: SOUNDS[snd].name,
+            open: u.sounds.includes(snd),
+            lock: lockLevel('sound', snd),
+            preview: <span className="text-2xl">{SOUNDS[snd].icon}</span>,
+          }))}
+          selected={profile.soundId}
+          onSelect={(snd) => {
+            set({ soundId: snd })
+            sfx.add(750, snd)
+          }}
+        />
+      </Section>
+
+      <Section className="mt-3">
+        {u.dice ? (
+          <Toggle checked={profile.diceBackground} onChange={(v) => set({ diceBackground: v })} label="🎲 Kocky v pozadí" hint="Počas tvojho ťahu poletujú kocky" />
+        ) : (
+          <div className="glass rounded-2xl px-4 py-3 text-sm text-muted">🔒 Kocky v pozadí – úroveň {lockLevel('dice', 'dice')}</div>
+        )}
+      </Section>
+
+      <Section title="Titul" className="mt-8">
         <div className="flex flex-wrap gap-2">
           <Btn className={`!rounded-full !py-2 text-sm ${!profile.titleId ? 'glow' : ''}`} onClick={() => set({ titleId: null })}>
             Bez titulu
@@ -183,13 +284,6 @@ function ProfileView({ profile }: { profile: Profile }) {
         </div>
       </Section>
 
-      <Section className="mt-3">
-        {u.dice ? (
-          <Toggle checked={profile.diceBackground} onChange={(v) => set({ diceBackground: v })} label="🎲 Kocky v pozadí" hint="Počas tvojho ťahu poletujú kocky" />
-        ) : (
-          <div className="glass rounded-2xl px-4 py-3 text-sm text-muted">🔒 Kocky v pozadí – úroveň 8</div>
-        )}
-      </Section>
 
       <Section title={`Odznaky · ${profile.achievements.length}/${ACHIEVEMENTS.length}`} className="mt-6">
         <div className="grid grid-cols-3 gap-2">
@@ -226,5 +320,33 @@ function ProfileView({ profile }: { profile: Profile }) {
         </Btn>
       </Section>
     </Screen>
+  )
+}
+
+/** Mriežka volieb s ukážkou; zamknuté ukazujú úroveň, na ktorej sa odomknú. */
+function Choices<T extends string>({
+  options,
+  selected,
+  onSelect,
+}: {
+  options: { id: T; name: string; open: boolean; lock: number; preview: ReactNode }[]
+  selected: T
+  onSelect: (id: T) => void
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {options.map((o) => (
+        <motion.button
+          key={o.id}
+          whileTap={o.open ? { scale: 0.95 } : undefined}
+          disabled={!o.open}
+          onClick={() => onSelect(o.id)}
+          className={`themed relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl px-2 py-3 ${selected === o.id && o.open ? 'glass-strong glow' : 'glass'}`}
+        >
+          <div className={`flex h-9 w-full items-center justify-center ${o.open ? '' : 'opacity-25 blur-[1.5px] grayscale'}`}>{o.preview}</div>
+          <div className="text-xs font-semibold">{o.open ? o.name : `🔒 úroveň ${o.lock}`}</div>
+        </motion.button>
+      ))}
+    </div>
   )
 }

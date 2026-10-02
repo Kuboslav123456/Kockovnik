@@ -4,20 +4,41 @@ import { useNav } from '../nav'
 import { abandonGame, addTurn, finishGame, undoTurn, useApp } from '../lib/store'
 import { deriveGame, fmt, roundTable } from '../lib/game'
 import { sfx } from '../lib/sound'
-import type { ActiveGame, Profile } from '../lib/types'
+import { cosmetics, FONTS } from '../lib/progression'
+import type { ActiveGame, BurstId, KeypadId, Profile } from '../lib/types'
 import { AnimatedNumber, Avatar, Btn, PlayerName } from '../components/ui'
 import { Sheet } from '../components/Sheet'
+import { Burst } from '../components/Burst'
+import type { HTMLMotionProps } from 'framer-motion'
 
 const QUICK = [50, 100, 500, 1000]
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫']
+
+const UNKNOWN: Omit<Profile, 'id'> = {
+  name: '?', avatar: '❔', xp: 0, achievements: [], themeId: 'wood', titleId: null, effectId: 'confetti',
+  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'classic', createdAt: 0,
+}
+
+/** Kláves v štýle, ktorý si hráč na ťahu odomkol */
+function Key({ skin, primary, className = '', ...rest }: HTMLMotionProps<'button'> & { skin: KeypadId; primary?: boolean }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.93 }}
+      transition={{ type: 'spring', stiffness: 600, damping: 30 }}
+      className={`key key-${skin} ${primary ? 'key-primary' : ''} disabled:opacity-40 ${className}`}
+      {...rest}
+    />
+  )
+}
 
 export function Game() {
   const nav = useNav()
   const app = useApp()
   const game = app.activeGame
 
+  // presmerovať smie len aktívna obrazovka – odchádzajúca (počas animácie) nie
   useEffect(() => {
-    if (!game) nav.reset({ name: 'home' })
+    if (!game && nav.route.name === 'game') nav.reset({ name: 'home' })
   }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!game) return null
@@ -27,12 +48,16 @@ export function Game() {
 function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] }) {
   const nav = useNav()
   const d = deriveGame(game)
-  const byId = (id: string) => profiles.find((p) => p.id === id) ?? { id, name: '?', avatar: '❔', xp: 0, achievements: [], themeId: 'wood' as const, titleId: null, effectId: 'confetti' as const, diceBackground: false, createdAt: 0 }
+  const byId = (id: string): Profile => profiles.find((p) => p.id === id) ?? { ...UNKNOWN, id }
   const current = byId(d.currentPlayerId)
+  // odomknuté veci hráča na ťahu – vidia ich všetci pri stole
+  const cur = cosmetics(current)
 
   const [input, setInput] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [flash, setFlash] = useState<{ playerId: string; points: number; key: number } | null>(null)
+  const [flash, setFlash] = useState<{ playerId: string; points: number; key: number; burst: BurstId } | null>(null)
+  const [thunder, setThunder] = useState(0)
+  const screen = useAnimationControls()
   const [showHistory, setShowHistory] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const shake = useAnimationControls()
@@ -53,13 +78,13 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
   }, [error])
 
   const fail = (msg: string) => {
-    sfx.error()
+    sfx.error(cur.soundId)
     setError(msg)
     void shake.start({ x: [0, -10, 10, -7, 7, -3, 0], transition: { duration: 0.4 } })
   }
 
   const press = (k: string) => {
-    sfx.tap()
+    sfx.tap(cur.soundId)
     if (k === '⌫') return setInput((s) => s.slice(0, -1))
     setInput((s) => {
       const next = (s === '0' ? '' : s) + k
@@ -69,7 +94,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
   }
 
   const quick = (n: number) => {
-    sfx.tap()
+    sfx.tap(cur.soundId)
     setInput((s) => String(Math.min(999999, Number(s || 0) + n)))
   }
 
@@ -77,28 +102,45 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
     if (points > 0 && game.rules.minEntry > 0 && d.totals[d.currentPlayerId] === 0 && points < game.rules.minEntry) {
       return fail(`Na vstup do hry treba aspoň ${fmt(game.rules.minEntry)} bodov`)
     }
-    if (points === 0) sfx.zero()
-    else sfx.add(points)
-    setFlash({ playerId: d.currentPlayerId, points, key: Date.now() })
+    if (points === 0) sfx.zero(cur.soundId)
+    else sfx.add(points, cur.soundId)
+    if (points > 0 && cur.burstId === 'lightning') {
+      sfx.thunder()
+      setThunder(Date.now())
+      void screen.start({ x: [0, -9, 9, -6, 6, -2, 0], y: [0, 4, -4, 2, 0], transition: { duration: 0.45 } })
+    }
+    setFlash({ playerId: d.currentPlayerId, points, key: Date.now(), burst: cur.burstId })
     addTurn(points)
     setInput('')
   }
 
   const undo = () => {
     if (!game.turns.length) return
-    sfx.undo()
+    sfx.undo(cur.soundId)
     setFlash(null)
     undoTurn()
     setInput('')
   }
 
   const confirmWin = () => {
-    sfx.win()
+    sfx.win(cosmetics(d.winnerId ? byId(d.winnerId) : undefined).soundId)
     if (finishGame()) nav.reset({ name: 'victory' })
   }
 
   return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col">
+    <motion.div animate={screen} className="mx-auto flex h-[100dvh] w-full max-w-md flex-col">
+      <AnimatePresence>
+        {thunder > 0 && (
+          <motion.div
+            key={thunder}
+            className="pointer-events-none fixed inset-0 z-50 bg-white"
+            initial={{ opacity: 0.85 }}
+            animate={{ opacity: [0.85, 0, 0.5, 0] }}
+            transition={{ duration: 0.5, times: [0, 0.3, 0.45, 1] }}
+            onAnimationComplete={() => setThunder(0)}
+          />
+        )}
+      </AnimatePresence>
       {/* Horná lišta */}
       <div className="safe-top flex items-center gap-2 px-4 pb-2">
         <Btn className="!rounded-full h-11 w-11 !p-0 text-xl" onClick={() => nav.reset({ name: 'home' })} aria-label="Domov">
@@ -163,7 +205,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
                   {leader && <span className="text-sm">👑</span>}
                 </div>
                 <div className={`${compact ? 'w-full' : 'ml-auto'} text-right`}>
-                  <AnimatedNumber value={total} className={`${compact ? 'text-2xl' : 'text-3xl'} font-black`} />
+                  <AnimatedNumber value={total} className={`inline-block ${compact ? 'text-2xl' : 'text-3xl'} font-black ${FONTS[cosmetics(p).fontId].className}`} />
                   <div className="h-4 text-xs text-muted tabular">
                     {lastTurn ? (lastTurn.points ? `posledný +${fmt(lastTurn.points)}` : 'posledný ✗') : active ? 'na ťahu' : ''}
                   </div>
@@ -179,15 +221,8 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
               </div>
               <AnimatePresence>
                 {flash?.playerId === id && (
-                  <motion.div
-                    key={flash.key}
-                    initial={{ opacity: 0, y: 10, scale: 0.6 }}
-                    animate={{ opacity: [0, 1, 1, 0], y: -36, scale: 1.15 }}
-                    transition={{ duration: 1.3, ease: 'easeOut' }}
-                    onAnimationComplete={() => setFlash(null)}
-                    className={`pointer-events-none absolute right-4 top-2 text-2xl font-black ${flash.points ? 'text-accent text-glow' : 'text-muted'}`}
-                  >
-                    {flash.points ? `+${fmt(flash.points)}` : 'Prepadol 💨'}
+                  <motion.div key={flash.key} className="pointer-events-none absolute inset-0 z-10" exit={{ opacity: 0 }}>
+                    <Burst burst={flash.burst} points={flash.points} onDone={() => setFlash(null)} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -213,7 +248,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
             </motion.div>
           </AnimatePresence>
           <div className="ml-auto min-w-0 text-right">
-            <motion.div key={value} initial={{ scale: 1.12 }} animate={{ scale: 1 }} className={`tabular text-4xl font-black ${value ? 'text-accent text-glow' : 'text-muted'}`}>
+            <motion.div key={value} initial={{ scale: 1.12 }} animate={{ scale: 1 }} className={`tabular inline-block text-4xl font-black ${value ? 'text-accent text-glow' : 'text-muted'} ${FONTS[cur.fontId].className}`}>
               {value ? `+${fmt(value)}` : '0'}
             </motion.div>
           </div>
@@ -228,31 +263,40 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
           </AnimatePresence>
         </div>
 
-        <div className="grid grid-cols-4 gap-2">
-          {QUICK.map((q) => (
-            <Btn key={q} silent className="tabular whitespace-nowrap !rounded-xl !px-1 !py-2 text-sm font-semibold text-accent" onClick={() => quick(q)}>
-              +{q}
-            </Btn>
-          ))}
-        </div>
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          {KEYS.map((k) => (
-            <Btn key={k} silent className="!rounded-xl h-12 !py-0 text-2xl font-semibold" onClick={() => press(k)} aria-label={k === '⌫' ? 'Zmazať' : k}>
-              {k}
-            </Btn>
-          ))}
-        </div>
-        <div className="mt-2 grid grid-cols-[1fr_1.4fr_2fr] gap-2 pb-1">
-          <Btn silent className="whitespace-nowrap !rounded-xl !px-1 text-sm" disabled={!game.turns.length} onClick={undo}>
-            ↩︎ Späť
-          </Btn>
-          <Btn silent className="whitespace-nowrap !rounded-xl !px-1 text-sm" onClick={() => commit(0)}>
-            💨 Prepadol
-          </Btn>
-          <Btn variant="accent" silent className="!rounded-xl text-lg" disabled={!value} onClick={() => commit(value)}>
-            Zapísať ✓
-          </Btn>
-        </div>
+        {/* Klávesnica sa pri zmene hráča "prevráti" do jeho štýlu */}
+        <motion.div
+            key={current.id + cur.keypadId}
+            initial={game.turns.length ? { opacity: 0.4, rotateX: -30, y: 10 } : false}
+            animate={{ opacity: 1, rotateX: 0, y: 0 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+            style={{ transformPerspective: 700 }}
+          >
+            <div className="grid grid-cols-4 gap-2">
+              {QUICK.map((q) => (
+                <Key key={q} skin={cur.keypadId} className="tabular whitespace-nowrap px-1 py-2 text-sm font-semibold" onClick={() => quick(q)}>
+                  +{q}
+                </Key>
+              ))}
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {KEYS.map((k) => (
+                <Key key={k} skin={cur.keypadId} className="h-12 text-2xl font-semibold" onClick={() => press(k)} aria-label={k === '⌫' ? 'Zmazať' : k}>
+                  {k}
+                </Key>
+              ))}
+            </div>
+            <div className="mt-2 grid grid-cols-[1fr_1.4fr_2fr] gap-2 pb-1">
+              <Key skin={cur.keypadId} className="whitespace-nowrap px-1 py-3 text-sm" disabled={!game.turns.length} onClick={undo}>
+                ↩︎ Späť
+              </Key>
+              <Key skin={cur.keypadId} className="whitespace-nowrap px-1 py-3 text-sm" onClick={() => commit(0)}>
+                💨 Prepadol
+              </Key>
+              <Key skin={cur.keypadId} primary className="py-3 text-lg font-semibold" disabled={!value} onClick={() => commit(value)}>
+                Zapísať ✓
+              </Key>
+            </div>
+          </motion.div>
       </motion.div>
 
       <Sheet open={showHistory} onClose={() => setShowHistory(false)} title="História kôl">
@@ -309,7 +353,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   )
 }
 

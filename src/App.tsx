@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { NavProvider, useNav, type Route } from './nav'
 import { getState, useApp } from './lib/store'
 import { deriveGame } from './lib/game'
-import { unlockedFor } from './lib/progression'
+import { cosmetics } from './lib/progression'
 import type { ThemeId } from './lib/types'
 import { ThemeLayer } from './components/ThemeLayer'
 import { Home } from './screens/Home'
@@ -40,15 +40,16 @@ function Shell() {
   const applyProfile = (id?: string | null) => {
     const p = byId(id)
     if (!p) return
-    themeId = p.themeId
-    dice = p.diceBackground && unlockedFor(p).dice
+    const c = cosmetics(p)
+    themeId = c.themeId
+    dice = c.dice
   }
   if (route.name === 'game' && app.activeGame) applyProfile(deriveGame(app.activeGame).currentPlayerId)
   if (route.name === 'victory' && app.lastResult) applyProfile(app.lastResult.game.winnerId)
   if (route.name === 'profile') applyProfile(route.id)
   if (route.name === 'pass' && route.id) {
     const p = byId(route.id)
-    if (p) themeId = p.themeId
+    if (p) themeId = cosmetics(p).themeId
   }
 
   const key = route.name + ('id' in route ? (route.id ?? '') : '')

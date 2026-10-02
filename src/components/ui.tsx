@@ -38,7 +38,10 @@ export function Btn({ variant = 'glass', className = '', silent, onClick, childr
 export function Header({ title, right, onBack }: { title: string; right?: ReactNode; onBack?: () => void }) {
   const nav = useNav()
   return (
-    <div className="safe-top sticky top-0 z-20 flex items-center gap-2 px-4 pb-3">
+    <div
+      className="safe-top sticky top-0 z-20 flex items-center gap-2 px-4 pb-3 backdrop-blur-md"
+      style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.15))', maskImage: 'linear-gradient(black 85%, transparent)', WebkitMaskImage: 'linear-gradient(black 85%, transparent)' }}
+    >
       <Btn variant="glass" className="!rounded-full !px-0 h-11 w-11 grid place-items-center text-xl" onClick={onBack ?? (() => nav.back())} aria-label="Späť">
         ←
       </Btn>

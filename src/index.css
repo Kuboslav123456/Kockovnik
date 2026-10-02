@@ -141,3 +141,111 @@ input {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ---------- Klávesnice (odomykateľné) ---------- */
+.key {
+  border-radius: 0.85rem;
+  transition: background 500ms, box-shadow 500ms, color 500ms, border-color 500ms;
+}
+.key-classic {
+  background: var(--t-surface);
+  border: 1px solid var(--t-border);
+  color: var(--t-text);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+.key-dice {
+  background: linear-gradient(160deg, #fffdf6 0%, #f3e6cc 70%, #e4d2ae 100%);
+  color: #2a1a0e;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 0 #b7a07a, 0 6px 14px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 #fff;
+  position: relative;
+}
+.key-dice::after {
+  /* malá bodka v rohu ako na kocke */
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: var(--t-accent2);
+  opacity: 0.8;
+}
+.key-dice:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #b7a07a, inset 0 1px 0 #fff;
+}
+.key-neon {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1.5px solid var(--t-accent);
+  color: var(--t-accent);
+  text-shadow: 0 0 8px var(--t-glow), 0 0 16px var(--t-glow);
+  box-shadow: 0 0 10px -2px var(--t-glow), inset 0 0 12px -4px var(--t-glow);
+}
+.key-neon:active {
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+  text-shadow: none;
+  box-shadow: 0 0 26px var(--t-glow);
+}
+.key-gold {
+  background: linear-gradient(160deg, #fff6c4 0%, #f5c842 35%, #c48a0c 70%, #ffe27a 100%);
+  color: #3a2300;
+  border: 1px solid rgba(255, 240, 180, 0.7);
+  box-shadow: 0 4px 0 #8a5a00, 0 8px 18px -6px rgba(245, 179, 1, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+.key-gold::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.55) 45%, transparent 60%);
+  background-size: 250% 100%;
+  animation: shimmer 3s linear infinite;
+}
+.key-gold:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #8a5a00;
+}
+/* hlavné tlačidlo Zapísať pri každom štýle */
+.key-primary.key-classic,
+.key-primary.key-dice {
+  background: linear-gradient(135deg, var(--t-accent), var(--t-accent2));
+  color: var(--t-on-accent);
+  border-color: transparent;
+}
+.key-primary.key-dice {
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--t-accent2), black 35%), 0 6px 14px -4px rgba(0, 0, 0, 0.5);
+}
+.key-primary.key-dice::after {
+  display: none;
+}
+.key-primary.key-neon {
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+  text-shadow: none;
+  box-shadow: 0 0 22px var(--t-glow);
+}
+
+/* ---------- Písma skóre (odomykateľné) ---------- */
+.score-chalk {
+  font-family: 'Caveat Variable', cursive;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transform: rotate(-2deg);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.7), 1px 1px 0 rgba(255, 255, 255, 0.12);
+  font-size: 1.45em;
+  line-height: 0.9;
+}
+.score-led {
+  font-family: 'Orbitron Variable', monospace;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--t-accent);
+  text-shadow: 0 0 6px var(--t-glow), 0 0 18px var(--t-glow);
+  font-size: 0.82em;
+}

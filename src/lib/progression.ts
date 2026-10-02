@@ -1,4 +1,4 @@
-import type { EffectId, FinishedGame, Profile, ThemeId } from './types'
+import type { BurstId, EffectId, FinishedGame, FontId, KeypadId, Profile, SoundId, ThemeId } from './types'
 import { THEMES } from './themes'
 import { playerStats, wasLastAtSomePoint } from './game'
 
@@ -50,13 +50,61 @@ export const EFFECTS: Record<EffectId, { name: string; icon: string }> = {
   goldrain: { name: 'Zlatý dážď', icon: '🪙' },
 }
 
+/** Vzhľad klávesnice – vidia ho všetci, keď je hráč na ťahu */
+export const KEYPADS: Record<KeypadId, { name: string; icon: string; desc: string }> = {
+  classic: { name: 'Klasická', icon: '⌨️', desc: 'Sklenené tlačidlá' },
+  dice: { name: 'Kockové klávesy', icon: '🎲', desc: 'Klávesy ako slonovinové kocky' },
+  neon: { name: 'Neónová', icon: '💡', desc: 'Svietiace obrysy v tme' },
+  gold: { name: 'Zlatá', icon: '🥇', desc: 'Klávesy z rýdzeho zlata' },
+}
+
+/** Čo sa stane po zapísaní bodov */
+export const BURSTS: Record<BurstId, { name: string; icon: string; desc: string }> = {
+  float: { name: 'Vyletenie', icon: '🎈', desc: 'Body vyletia nad kartu' },
+  explode: { name: 'Explózia', icon: '💥', desc: 'Body vybuchnú do iskier' },
+  lightning: { name: 'Blesk', icon: '⚡', desc: 'Zablýska sa a stôl sa otrasie' },
+  fire: { name: 'Dračí oheň', icon: '🔥', desc: 'Body vzplanú plameňmi' },
+}
+
+/** Písmo, ktorým sa zobrazuje skóre hráča */
+export const FONTS: Record<FontId, { name: string; icon: string; desc: string; className: string }> = {
+  classic: { name: 'Klasické', icon: '🔢', desc: 'Čisté a čitateľné', className: '' },
+  chalk: { name: 'Krieda', icon: '🖍️', desc: 'Ako ručne na papieri', className: 'score-chalk' },
+  led: { name: 'Digitálne', icon: '📟', desc: 'Svietiaci displej', className: 'score-led' },
+}
+
+/** Zvukový balíček počas ťahu */
+export const SOUNDS: Record<SoundId, { name: string; icon: string; desc: string }> = {
+  classic: { name: 'Klasické', icon: '🔔', desc: 'Jemné cinknutia' },
+  retro: { name: '8-bit', icon: '👾', desc: 'Zvuky starých automatov' },
+  casino: { name: 'Kasíno', icon: '🎰', desc: 'Cinkot mincí a žetónov' },
+}
+
+type R<K extends string, I extends string> = { level: number; kind: K; id: I; name: string; icon: string; desc: string }
 export type Reward =
-  | { level: number; kind: 'theme'; id: ThemeId; name: string; icon: string; desc: string }
-  | { level: number; kind: 'avatars'; id: string; name: string; icon: string; desc: string }
-  | { level: number; kind: 'effect'; id: EffectId; name: string; icon: string; desc: string }
-  | { level: number; kind: 'title'; id: string; name: string; icon: string; desc: string }
-  | { level: number; kind: 'dice'; id: 'dice'; name: string; icon: string; desc: string }
-  | { level: number; kind: 'frame'; id: 'gold'; name: string; icon: string; desc: string }
+  | R<'theme', ThemeId>
+  | R<'avatars', string>
+  | R<'effect', EffectId>
+  | R<'title', string>
+  | R<'dice', 'dice'>
+  | R<'frame', 'gold'>
+  | R<'keypad', KeypadId>
+  | R<'burst', BurstId>
+  | R<'font', FontId>
+  | R<'sound', SoundId>
+
+export const KIND_LABEL: Record<Reward['kind'], string> = {
+  theme: 'Téma stola',
+  avatars: 'Avatary',
+  effect: 'Efekt víťazstva',
+  title: 'Titul',
+  dice: 'Pozadie',
+  frame: 'Rámik',
+  keypad: 'Klávesnica',
+  burst: 'Animácia bodov',
+  font: 'Písmo čísel',
+  sound: 'Zvuky',
+}
 
 const theme = (level: number, id: ThemeId, desc: string): Reward => ({
   level, kind: 'theme', id, name: `Téma ${THEMES[id].name}`, icon: THEMES[id].emoji, desc,
@@ -67,43 +115,91 @@ const avatars = (level: number, id: string): Reward => ({
 const title = (level: number, id: string): Reward => ({
   level, kind: 'title', id, name: `Titul „${TITLES[id]}“`, icon: '🏷️', desc: 'Zobrazí sa pri tvojom mene',
 })
+const keypad = (level: number, id: KeypadId): Reward => ({ level, kind: 'keypad', id, name: `Klávesnica: ${KEYPADS[id].name}`, icon: KEYPADS[id].icon, desc: KEYPADS[id].desc })
+const burst = (level: number, id: BurstId): Reward => ({ level, kind: 'burst', id, name: `Animácia: ${BURSTS[id].name}`, icon: BURSTS[id].icon, desc: BURSTS[id].desc })
+const font = (level: number, id: FontId): Reward => ({ level, kind: 'font', id, name: `Písmo: ${FONTS[id].name}`, icon: FONTS[id].icon, desc: FONTS[id].desc })
+const sound = (level: number, id: SoundId): Reward => ({ level, kind: 'sound', id, name: `Zvuky: ${SOUNDS[id].name}`, icon: SOUNDS[id].icon, desc: SOUNDS[id].desc })
 
+/** Cesta odmien – každá úroveň niečo odomyká, väčšina sa prejaví počas ťahu hráča. */
 export const REWARDS: Reward[] = [
   theme(1, 'wood', 'Klasický stôl z tmavého dreva'),
   avatars(2, 'pack1'),
   theme(3, 'casino', 'Zelené sukno a zlaté akcenty'),
-  { level: 4, kind: 'effect', id: 'fireworks', name: 'Efekt: Ohňostroj', icon: '🎆', desc: 'Tvoje víťazstvo rozžiari oblohu' },
-  title(5, 'noble'),
-  theme(6, 'neon', 'Tma a svietiace okraje'),
-  avatars(7, 'pack2'),
+  keypad(4, 'dice'),
+  title(4, 'noble'),
+  { level: 5, kind: 'effect', id: 'fireworks', name: 'Efekt: Ohňostroj', icon: '🎆', desc: 'Tvoje víťazstvo rozžiari oblohu' },
+  burst(6, 'explode'),
+  theme(7, 'neon', 'Tma a svietiace okraje'),
   { level: 8, kind: 'dice', id: 'dice', name: 'Kocky v pozadí', icon: '🎲', desc: 'Počas tvojho ťahu poletujú kocky' },
-  { level: 9, kind: 'effect', id: 'goldrain', name: 'Efekt: Zlatý dážď', icon: '🪙', desc: 'Pri výhre prší zlato' },
+  font(9, 'chalk'),
   theme(10, 'space', 'Hviezdy, planéty, nekonečno'),
   title(10, 'master'),
-  title(12, 'mage'),
-  avatars(13, 'pack3'),
+  sound(11, 'retro'),
+  keypad(12, 'neon'),
+  avatars(13, 'pack2'),
+  burst(14, 'lightning'),
   { level: 15, kind: 'frame', id: 'gold', name: 'Zlatý rámik', icon: '🖼️', desc: 'Žiarivý rámik okolo avatara' },
+  title(15, 'mage'),
+  font(16, 'led'),
+  { level: 17, kind: 'effect', id: 'goldrain', name: 'Efekt: Zlatý dážď', icon: '🪙', desc: 'Pri výhre prší zlato' },
+  keypad(18, 'gold'),
   title(18, 'legend'),
+  avatars(19, 'pack3'),
+  sound(19, 'casino'),
   theme(20, 'dragon', 'Legendárna téma pre skutočných pánov kociek'),
+  burst(20, 'fire'),
 ]
 
 export function rewardsUpTo(level: number) {
   return REWARDS.filter((r) => r.level <= level)
 }
 
-export function unlockedFor(profile: Profile) {
+export function unlockedFor(profile: Pick<Profile, 'xp'>) {
   const level = levelFromXp(profile.xp)
   const got = rewardsUpTo(level)
+  const ids = <K extends Reward['kind']>(kind: K) =>
+    got.filter((r) => r.kind === kind).map((r) => r.id) as Extract<Reward, { kind: K }>['id'][]
   const avatars = [...BASE_AVATARS]
-  got.forEach((r) => r.kind === 'avatars' && avatars.push(...AVATAR_PACKS[r.id]))
+  ids('avatars').forEach((id) => avatars.push(...AVATAR_PACKS[id]))
   return {
     level,
-    themes: got.filter((r) => r.kind === 'theme').map((r) => r.id as ThemeId),
-    titles: got.filter((r) => r.kind === 'title').map((r) => r.id),
-    effects: ['confetti' as EffectId, ...got.filter((r) => r.kind === 'effect').map((r) => r.id as EffectId)],
+    themes: ids('theme'),
+    titles: ids('title'),
+    effects: ['confetti' as EffectId, ...ids('effect')],
+    keypads: ['classic' as KeypadId, ...ids('keypad')],
+    bursts: ['float' as BurstId, ...ids('burst')],
+    fonts: ['classic' as FontId, ...ids('font')],
+    sounds: ['classic' as SoundId, ...ids('sound')],
     avatars,
     dice: got.some((r) => r.kind === 'dice'),
     frame: got.some((r) => r.kind === 'frame'),
+  }
+}
+
+/** Čo hráč reálne používa – ak má zvolené niečo, čo nemá odomknuté, použije sa základ. */
+export function cosmetics(profile: Profile | undefined) {
+  const base = {
+    themeId: 'wood' as ThemeId,
+    effectId: 'confetti' as EffectId,
+    keypadId: 'classic' as KeypadId,
+    burstId: 'float' as BurstId,
+    fontId: 'classic' as FontId,
+    soundId: 'classic' as SoundId,
+    dice: false,
+    titleId: null as string | null,
+  }
+  if (!profile) return base
+  const u = unlockedFor(profile)
+  const pick = <T,>(sel: T | undefined, list: T[], def: T) => (sel !== undefined && list.includes(sel) ? sel : def)
+  return {
+    themeId: pick(profile.themeId, u.themes, base.themeId),
+    effectId: pick(profile.effectId, u.effects, base.effectId),
+    keypadId: pick(profile.keypadId, u.keypads, base.keypadId),
+    burstId: pick(profile.burstId, u.bursts, base.burstId),
+    fontId: pick(profile.fontId, u.fonts, base.fontId),
+    soundId: pick(profile.soundId, u.sounds, base.soundId),
+    dice: u.dice && profile.diceBackground,
+    titleId: profile.titleId && u.titles.includes(profile.titleId) ? profile.titleId : null,
   }
 }
 
