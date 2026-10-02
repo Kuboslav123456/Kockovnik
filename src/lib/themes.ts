@@ -91,7 +91,7 @@ export const THEMES: Record<ThemeId, Theme> = {
       '--t-sheet': '#efdcb4',
       '--t-input': 'rgba(255, 249, 232, 0.55)',
       '--t-font-body': "'IM Fell English', 'EB Garamond', Georgia, serif",
-      '--t-font-display': "'UnifrakturMaguntia', 'EB Garamond', serif",
+      '--t-font-display': "'IM Fell English', 'EB Garamond', Georgia, serif",
       '--t-font-caps': "'IM Fell English SC', 'EB Garamond', Georgia, serif",
       '--t-display-weight': '400',
     },

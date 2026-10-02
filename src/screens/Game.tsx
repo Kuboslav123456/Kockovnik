@@ -182,8 +182,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
           animate={{ y: 0, opacity: 1 }}
           className="font-display whitespace-nowrap text-[30px] leading-none"
         >
-          {/* v gotickom písme sa I a J nedajú rozlíšiť – rímske číslo je preto v IM Fell */}
-          Kolo <span className="font-sans">{toRoman(d.round)}</span>
+          Kolo {toRoman(d.round)}
         </motion.span>
         <div className="font-caps ml-auto whitespace-nowrap text-[13px] text-accent">
           do {fmt(game.target)} ·{' '}

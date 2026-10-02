@@ -23,10 +23,10 @@ Ako PWA (ikona na ploche, offline režim) appka funguje naplno až cez HTTPS.
 
 ## Vzhľad „Rukopis“
 
-Predvolený vzhľad je stredoveký iluminovaný rukopis: pergamen, gotické iniciály, zlato a rumelka. Body sa „zapisujú do kroniky“.
+Predvolený vzhľad je stredoveký iluminovaný rukopis: pergamen, iniciály v rumelkových rámčekoch, zlato a rumelka. Body sa „zapisujú do kroniky“.
 
-- Písma: UnifrakturMaguntia (iniciály, logo, „Kolo“), IM Fell English a IM Fell English SC. Tieto písma nemajú slovenské znaky (č, š, ž, ť, ľ…), preto ich dopĺňa EB Garamond.
-- Rímske číslo kola je v IM Fell, lebo v gotickom písme sa I a J nedajú rozlíšiť.
+- Písma: IM Fell English (text, iniciály, logo) a IM Fell English SC (kapitálky). Nemajú slovenské znaky (č, š, ž, ť, ľ…), preto ich dopĺňa EB Garamond.
+- Gotické písmo (UnifrakturMaguntia) z pôvodného návrhu sa nepoužíva, lebo bolo zle čitateľné.
 - Rozloženie Domova a Hry je spoločné pre všetky témy. Témy menia farby, písma a dekor (tokeny v `src/lib/themes.ts`).
 - Citát nad hodnotou („A Sofi hodila kockami a padlo jej…“) berie tvar slovies z profilu hráča. Ak rod nie je zadaný, použije sa neutrálne „Sofi hádže…“.
 
