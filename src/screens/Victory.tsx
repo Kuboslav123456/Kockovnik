@@ -4,7 +4,7 @@ import { useNav } from '../nav'
 import { startGame, useApp } from '../lib/store'
 import { deriveGame, fmt } from '../lib/game'
 import { ACHIEVEMENT_MAP, cosmetics, KIND_LABEL, levelFromXp, levelProgress, REWARDS, type Reward } from '../lib/progression'
-import { playEffect } from '../lib/effects'
+import { playEffect, wasEffectPlayed } from '../lib/effects'
 import { sfx } from '../lib/sound'
 import { THEMES } from '../lib/themes'
 import type { GameResult, PlayerResult, Profile } from '../lib/types'
@@ -36,9 +36,10 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
   useEffect(() => {
     if (played.current || !winner) return
     played.current = true
+    if (wasEffectPlayed(game.id)) return
     const c = cosmetics(winner)
     const t = THEMES[c.themeId].vars
-    playEffect(c.effectId, [t['--t-accent'], t['--t-accent2'], '#ffffff'])
+    playEffect(c.effectId, [t['--t-accent'], t['--t-accent2'], t['--t-accent3']])
   }, [winner])
 
   const best = game.turns.reduce((a, t) => (t.points > a.points ? t : a), { playerId: '', points: 0 })
@@ -70,7 +71,7 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
                   👑
                 </motion.div>
               </motion.div>
-              <motion.h1 className="text-glow relative mt-6 text-4xl font-black" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
+              <motion.h1 className="font-display text-glow relative mt-6 text-[40px] leading-tight" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
                 {winner?.name ?? '?'} vyhráva!
               </motion.h1>
               <motion.div className="tabular relative mt-1 text-lg text-muted" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
@@ -113,7 +114,7 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
           </motion.div>
         ) : (
           <motion.div key="r" className="flex flex-1 flex-col" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="mb-4 mt-2 text-center text-2xl font-black">Kockový pas</h1>
+            <h1 className="font-caps mb-4 mt-2 text-center text-3xl tracking-wide">Kockový pas</h1>
             <div className="flex flex-col gap-3">
               {ordered.map((r, i) => {
                 const p = byId(r.playerId)
@@ -200,8 +201,8 @@ function RewardCard({ result, profile, delay }: { result: PlayerResult; profile:
         </div>
       </div>
 
-      <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-black/35">
-        <div className="btn-accent h-full rounded-full" style={{ width: `${Math.max(2, p.ratio * 100)}%` }} />
+      <div className="relative mt-3 h-3 overflow-hidden rounded-full bg-track">
+        <div className="bar-fill h-full rounded-full" style={{ width: `${Math.max(2, p.ratio * 100)}%` }} />
       </div>
       <div className="relative mt-1 flex justify-between text-xs text-muted">
         <span className="tabular">+{gained} XP</span>
@@ -215,7 +216,7 @@ function RewardCard({ result, profile, delay }: { result: PlayerResult; profile:
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: delay + i * 0.15 }}
-            className="rounded-full bg-black/25 px-2.5 py-1 text-[11px]"
+            className="rounded-full bg-surface-strong px-2.5 py-1 text-[11px]"
           >
             {l.label} <b className="text-accent">+{l.xp}</b>
           </motion.span>
@@ -234,7 +235,7 @@ function RewardCard({ result, profile, delay }: { result: PlayerResult; profile:
                   ))}
                 </div>
                 <div className="mt-1 text-[11px] text-muted">
-                  Nové veci sa zapnú samé. Zmeniť ich môžeš v profile, všetci ich uvidia počas tvojho ťahu.
+                  Klávesnica, animácie, písmo a zvuky sa zapnú samé. Novú tému stola si vyber v profile. Všetko uvidia ostatní počas tvojho ťahu.
                 </div>
               </>
             )}

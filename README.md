@@ -21,13 +21,22 @@ npm run build
 Výstup je v `dist/` (statické súbory, dajú sa nahrať na ľubovoľný hosting).
 Ako PWA (ikona na ploche, offline režim) appka funguje naplno až cez HTTPS.
 
+## Vzhľad „Rukopis“
+
+Predvolený vzhľad je stredoveký iluminovaný rukopis: pergamen, gotické iniciály, zlato a rumelka. Body sa „zapisujú do kroniky“.
+
+- Písma: UnifrakturMaguntia (iniciály, logo, „Kolo“), IM Fell English a IM Fell English SC. Tieto písma nemajú slovenské znaky (č, š, ž, ť, ľ…), preto ich dopĺňa EB Garamond.
+- Rímske číslo kola je v IM Fell, lebo v gotickom písme sa I a J nedajú rozlíšiť.
+- Rozloženie Domova a Hry je spoločné pre všetky témy. Témy menia farby, písma a dekor (tokeny v `src/lib/themes.ts`).
+- Citát nad hodnotou („A Sofi hodila kockami a padlo jej…“) berie tvar slovies z profilu hráča. Ak rod nie je zadaný, použije sa neutrálne „Sofi hádže…“.
+
 ## Kockový pas – čo sa odomyká
 
-Hrá sa na jednom mobile, takže väčšina odmien sa ukazuje **počas ťahu hráča**: keď má mobil v ruke Sofi, všetci vidia jej tému stola, klávesnicu, animáciu bodov, písmo aj zvuky. Nová odmena sa po odomknutí zapne sama a v profile sa dá zmeniť.
+Hrá sa na jednom mobile, takže väčšina odmien sa ukazuje **počas ťahu hráča**: keď má mobil v ruke Sofi, všetci vidia jej tému stola, klávesnicu, animáciu bodov, písmo aj zvuky. Nová odmena sa po odomknutí zapne sama (okrem tém stola, tie si hráč vyberie v profile), v profile sa dá všetko zmeniť.
 
 | Úroveň | Odmena |
 |---|---|
-| 1 | Téma Tmavé drevo |
+| 1 | Témy Rukopis a Tmavé drevo |
 | 2 | Nové avatary |
 | 3 | Téma Kasíno |
 | 4 | Klávesnica: Kockové klávesy, titul Kockový šľachtic |

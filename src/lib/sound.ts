@@ -59,6 +59,8 @@ function coin(start: number, vol = 0.1) {
 
 export function haptic(pattern: number | number[]) {
   if (!getState().settings.vibration) return
+  // prehliadač vibráciu pred prvým dotykom aj tak zablokuje (a zapíše chybu do konzoly)
+  if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return
   try {
     navigator.vibrate?.(pattern)
   } catch {

@@ -1,4 +1,5 @@
-export type ThemeId = 'wood' | 'casino' | 'neon' | 'space' | 'dragon'
+export type ThemeId = 'manuscript' | 'wood' | 'casino' | 'neon' | 'space' | 'dragon'
+export type Gender = 'f' | 'm'
 export type EffectId = 'confetti' | 'fireworks' | 'goldrain'
 export type KeypadId = 'classic' | 'dice' | 'neon' | 'gold'
 export type BurstId = 'float' | 'explode' | 'lightning' | 'fire'
@@ -9,6 +10,8 @@ export interface Profile {
   id: string
   name: string
   avatar: string
+  /** len kvôli správnemu tvaru slovies („hodila“ / „hodil“); nepovinné */
+  gender?: Gender | null
   xp: number
   achievements: string[]
   themeId: ThemeId
@@ -56,6 +59,8 @@ export interface Settings {
   sound: boolean
   vibration: boolean
   menuThemeId: ThemeId
+  /** klávesy 1–3 ako I, II, III */
+  romanKeys: boolean
 }
 
 export interface XpLine {
@@ -77,7 +82,7 @@ export interface GameResult {
 }
 
 export interface AppState {
-  version: 1
+  version: 1 | 2
   profiles: Profile[]
   activeGame: ActiveGame | null
   history: FinishedGame[]

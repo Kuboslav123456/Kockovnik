@@ -1,6 +1,11 @@
 import confetti from 'canvas-confetti'
 import type { EffectId } from './types'
 
+// Efekt víťaza sa spúšťa už pri pečati v hre – obrazovka výhry ho neopakuje
+const played = new Set<string>()
+export const markEffectPlayed = (gameId: string) => played.add(gameId)
+export const wasEffectPlayed = (gameId: string) => played.has(gameId)
+
 export function playEffect(effect: EffectId, colors: string[]) {
   const end = Date.now() + 2600
 

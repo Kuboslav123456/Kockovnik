@@ -1,122 +1,167 @@
-import { motion } from 'framer-motion'
-import { useNav } from '../nav'
+import { motion, useAnimationControls } from 'framer-motion'
+import { useNav, type Route } from '../nav'
 import { updateSettings, useApp } from '../lib/store'
-import { deriveGame, fmt } from '../lib/game'
-import { levelFromXp, themesUnlockedByAnyone } from '../lib/progression'
+import { deriveGame, fmt, toRoman } from '../lib/game'
+import { themesUnlockedByAnyone } from '../lib/progression'
+import { sfx } from '../lib/sound'
 import { THEMES } from '../lib/themes'
-import { Avatar, Btn, Screen, listItem } from '../components/ui'
-import { DieLogo } from '../components/DieLogo'
+
+const rise = {
+  hidden: { opacity: 0, y: 10 },
+  show: (i: number) => ({ opacity: 1, y: 0, transition: { delay: 0.05 + i * 0.07, type: 'spring' as const, stiffness: 240, damping: 26 } }),
+}
 
 export function Home() {
   const nav = useNav()
   const app = useApp()
   const game = app.activeGame
   const d = game ? deriveGame(game) : null
-  const leader = [...app.profiles].sort((a, b) => b.xp - a.xp).slice(0, 3)
   const menuThemes = themesUnlockedByAnyone(app.profiles)
+  const wiggle = useAnimationControls()
 
-  const tiles = [
-    { label: 'Profily', icon: '👥', sub: `${app.profiles.length} hráčov`, to: { name: 'profiles' as const } },
-    { label: 'Kockový pas', icon: '🗺️', sub: 'Odmeny a úrovne', to: { name: 'pass' as const } },
-    { label: 'Štatistiky', icon: '📊', sub: `${app.history.length} odohraných`, to: { name: 'stats' as const } },
+  const links: { label: string; to: Route }[] = [
+    { label: 'Družina', to: { name: 'profiles' } },
+    { label: 'Pas', to: { name: 'pass' } },
+    { label: 'Letopisy', to: { name: 'stats' } },
+  ]
+
+  const roll = () => {
+    sfx.flip()
+    void wiggle.start({ rotate: [0, -9, 8, -5, 3, 0], scale: [1, 1.06, 1], transition: { duration: 0.55 } })
+  }
+
+  const toggles: { label: string; on: boolean; flip: () => void }[] = [
+    { label: 'Zvuk', on: app.settings.sound, flip: () => updateSettings({ sound: !app.settings.sound }) },
+    { label: 'Vibrácie', on: app.settings.vibration, flip: () => updateSettings({ vibration: !app.settings.vibration }) },
+    { label: 'Rímske I–III', on: app.settings.romanKeys, flip: () => updateSettings({ romanKeys: !app.settings.romanKeys }) },
   ]
 
   return (
-    <Screen className="safe-top safe-bottom gap-5 px-4">
-      <div className="flex justify-end gap-2 pt-1">
-        <Btn className="!rounded-full h-10 w-10 !p-0 text-lg" onClick={() => updateSettings({ sound: !app.settings.sound })} aria-label="Zvuk">
-          {app.settings.sound ? '🔊' : '🔇'}
-        </Btn>
-        <Btn className="!rounded-full h-10 w-10 !p-0 text-lg" onClick={() => updateSettings({ vibration: !app.settings.vibration })} aria-label="Vibrácie">
-          {app.settings.vibration ? '📳' : '📴'}
-        </Btn>
+    <div className="relative mx-auto min-h-full w-full max-w-md" style={{ paddingBottom: 130 }}>
+      {/* rám strany */}
+      <div className="page-frame absolute" style={{ left: 18, right: 18, bottom: 18, top: 'calc(max(env(safe-area-inset-top), 12px) + 20px)' }} />
+
+      <div className="relative px-[38px] text-center" style={{ paddingTop: 'calc(max(env(safe-area-inset-top), 12px) + 52px)' }}>
+        <motion.div custom={0} variants={rise} initial="hidden" animate="show" className="font-caps text-[13px] tracking-[0.2em] text-accent">
+          ✠ Liber Aleae ✠
+        </motion.div>
+
+        <motion.div custom={1} variants={rise} initial="hidden" animate="show" className="mt-3.5 flex items-end justify-center gap-1">
+          <motion.button
+            animate={wiggle}
+            whileTap={{ scale: 0.94 }}
+            onClick={roll}
+            aria-label="Hodiť kockou"
+            className="initial-box initial-box-logo shrink-0"
+            style={{ width: 74, height: 80, fontSize: 72 }}
+          >
+            K
+          </motion.button>
+          <span className="font-display leading-none" style={{ fontSize: 'clamp(32px, 11.5vw, 46px)' }}>
+            ockovník
+          </span>
+        </motion.div>
+
+        <motion.p custom={2} variants={rise} initial="hidden" animate="show" className="mt-3 text-base italic text-muted">
+          Tu sa zapisujú hody a slávne činy pri stole.
+        </motion.p>
       </div>
 
-      <motion.div className="flex flex-col items-center pt-2 text-center" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <DieLogo />
-        <h1 className="text-glow mt-5 text-5xl font-black tracking-tight">Kockovník</h1>
-        <p className="mt-1 text-muted">Ty hádžeš, ja počítam.</p>
-      </motion.div>
-
       {game && d && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => nav.go({ name: 'game' })}
-          className="themed glass-strong glow relative overflow-hidden rounded-3xl p-4 text-left"
-        >
-          <div className="shimmer pointer-events-none absolute inset-0 opacity-40" />
-          <div className="text-xs font-semibold uppercase tracking-widest text-accent">Rozohraná hra</div>
-          <div className="mt-1 text-lg font-bold">Pokračovať · kolo {d.round}</div>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
-            {game.playerIds.map((id) => {
+        <motion.div custom={3} variants={rise} initial="hidden" animate="show" className="relative mx-[38px] mt-[30px] border-t border-rule-strong pt-3.5">
+          <div className="font-caps text-[13px] tracking-[0.12em] text-accent">Kapitola {toRoman(d.round)} — rozohraná</div>
+          <div className="mt-2 grid grid-cols-[1fr_auto] gap-y-1 text-[17px]">
+            {d.ranking.map((id) => {
               const p = app.profiles.find((x) => x.id === id)
               return (
-                <span key={id} className="tabular">
-                  {p?.avatar} {fmt(d.totals[id])}
-                </span>
+                <div key={id} className="contents">
+                  <span className="truncate">
+                    {p?.avatar} {p?.name ?? '?'}
+                  </span>
+                  <span className="tabular">{fmt(d.totals[id])}</span>
+                </div>
               )
             })}
           </div>
-        </motion.button>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => nav.go({ name: 'game' })} className="mt-2.5 min-h-11 text-lg italic text-accent">
+            Pokračovať v kronike ☞
+          </motion.button>
+        </motion.div>
       )}
 
-      <Btn variant="accent" className="!rounded-3xl py-5 text-xl" onClick={() => nav.go({ name: 'newGame' })}>
-        🎲 Nová hra
-      </Btn>
+      <motion.div custom={4} variants={rise} initial="hidden" animate="show" className="relative mx-[38px] mt-[26px]">
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => {
+            sfx.tap()
+            nav.go({ name: 'newGame' })
+          }}
+          className="btn-accent cta w-full rounded-2xl p-3.5 text-[22px]"
+        >
+          Nová kapitola
+        </motion.button>
+      </motion.div>
 
-      <div className="grid grid-cols-3 gap-3">
-        {tiles.map((t, i) => (
+      <motion.nav custom={5} variants={rise} initial="hidden" animate="show" className="font-caps relative mx-[38px] mt-[18px] flex justify-between text-[15px] text-muted">
+        {links.map((l) => (
           <motion.button
-            key={t.label}
-            custom={i}
-            variants={listItem}
-            initial="hidden"
-            animate="show"
+            key={l.label}
             whileTap={{ scale: 0.94 }}
-            onClick={() => nav.go(t.to)}
-            className="themed glass flex flex-col items-center gap-1 rounded-3xl px-2 py-4"
+            onClick={() => {
+              sfx.tap()
+              nav.go(l.to)
+            }}
+            className="min-h-11 px-1"
           >
-            <span className="text-3xl">{t.icon}</span>
-            <span className="text-sm font-semibold">{t.label}</span>
-            <span className="text-[11px] text-muted">{t.sub}</span>
+            ❦ {l.label}
           </motion.button>
         ))}
-      </div>
+      </motion.nav>
 
-      {leader.length > 0 && (
-        <div className="themed glass rounded-3xl p-4">
-          <div className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted">Rebríček</div>
-          <div className="flex flex-col gap-2">
-            {leader.map((p, i) => (
-              <button key={p.id} className="flex items-center gap-3 text-left" onClick={() => nav.go({ name: 'profile', id: p.id })}>
-                <span className="w-5 text-center text-lg">{['🥇', '🥈', '🥉'][i]}</span>
-                <Avatar profile={p} size={36} />
-                <span className="flex-1 truncate font-medium">{p.name}</span>
-                <span className="text-sm text-muted">úr. {levelFromXp(p.xp)}</span>
+      <motion.div custom={6} variants={rise} initial="hidden" animate="show" className="font-caps relative mx-[38px] mt-4 border-t border-rule pt-3 text-[13px] text-muted">
+        <div className="flex flex-wrap justify-center gap-x-4">
+          {toggles.map((t) => (
+            <button
+              key={t.label}
+              className="min-h-11"
+              onClick={() => {
+                t.flip()
+                sfx.tap()
+              }}
+            >
+              {t.label} <span className={t.on ? 'text-accent' : 'text-faint'}>{t.on ? '✓' : '✗'}</span>
+            </button>
+          ))}
+        </div>
+        {menuThemes.length > 1 && (
+          <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-0">
+            <span className="min-h-11 content-center text-faint">Téma:</span>
+            {menuThemes.map((t) => (
+              <button
+                key={t}
+                onClick={() => {
+                  sfx.tap()
+                  updateSettings({ menuThemeId: t })
+                }}
+                className={`min-h-11 ${app.settings.menuThemeId === t ? 'text-accent underline decoration-accent2 underline-offset-4' : ''}`}
+              >
+                {THEMES[t].name}
               </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </motion.div>
 
-      {menuThemes.length > 1 && (
-        <div>
-          <div className="mb-2 px-1 text-xs font-semibold uppercase tracking-widest text-muted">Téma menu</div>
-          <div className="no-scrollbar flex gap-2 overflow-x-auto">
-            {menuThemes.map((t) => (
-              <Btn
-                key={t}
-                className={`shrink-0 !rounded-full !py-2 text-sm ${app.settings.menuThemeId === t ? 'glow' : ''}`}
-                onClick={() => updateSettings({ menuThemeId: t })}
-              >
-                {THEMES[t].emoji} {THEMES[t].name}
-              </Btn>
-            ))}
-          </div>
-        </div>
-      )}
-    </Screen>
+      {/* vosková pečať */}
+      <motion.div
+        className="wax-seal absolute"
+        style={{ right: 30, bottom: 44, width: 58, height: 58, fontSize: 22 }}
+        initial={{ y: -40, rotate: -40, opacity: 0 }}
+        animate={{ y: 0, rotate: -12, opacity: 1 }}
+        transition={{ delay: 0.5, type: 'spring', stiffness: 260, damping: 12 }}
+      >
+        K
+      </motion.div>
+    </div>
   )
 }

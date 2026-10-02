@@ -13,7 +13,7 @@ type BtnProps = HTMLMotionProps<'button'> & { variant?: 'accent' | 'glass' | 'gh
 export function Btn({ variant = 'glass', className = '', silent, onClick, children, ...rest }: BtnProps) {
   const base =
     variant === 'accent'
-      ? 'btn-accent font-semibold'
+      ? 'btn-accent cta font-semibold'
       : variant === 'glass'
         ? 'glass text-ink'
         : 'text-muted'
@@ -39,13 +39,13 @@ export function Header({ title, right, onBack }: { title: string; right?: ReactN
   const nav = useNav()
   return (
     <div
-      className="safe-top sticky top-0 z-20 flex items-center gap-2 px-4 pb-3 backdrop-blur-md"
-      style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.15))', maskImage: 'linear-gradient(black 85%, transparent)', WebkitMaskImage: 'linear-gradient(black 85%, transparent)' }}
+      className="safe-top sticky top-0 z-20 flex items-center gap-2 px-4 pb-3"
+      style={{ background: 'linear-gradient(to bottom, var(--t-sheet) 55%, transparent)' }}
     >
       <Btn variant="glass" className="!rounded-full !px-0 h-11 w-11 grid place-items-center text-xl" onClick={onBack ?? (() => nav.back())} aria-label="Späť">
         ←
       </Btn>
-      <h1 className="flex-1 truncate text-xl font-bold">{title}</h1>
+      <h1 className="font-caps flex-1 truncate text-2xl tracking-wide">{title}</h1>
       {right}
     </div>
   )
@@ -61,7 +61,7 @@ export function Avatar({ profile, size = 48, glow }: { profile: Pick<Profile, 'a
   const frame = unlockedFor(profile as Profile).frame
   const inner = (
     <div
-      className={`themed grid place-items-center rounded-full glass-strong ${glow ? 'glow' : ''}`}
+      className={`themed avatar-disc grid place-items-center rounded-full ${glow ? 'avatar-glow' : ''}`}
       style={{ width: size, height: size, fontSize: size * 0.55, lineHeight: 1 }}
     >
       {profile.avatar}
@@ -118,9 +118,9 @@ export function XpBar({ xp, className = '' }: { xp: number; className?: string }
         <span>Úroveň {p.level}</span>
         <span className="tabular">{p.needed ? `${fmt(p.current)} / ${fmt(p.needed)} XP` : 'MAX'}</span>
       </div>
-      <div className="h-2.5 overflow-hidden rounded-full bg-black/30">
+      <div className="h-2.5 overflow-hidden rounded-full bg-track">
         <motion.div
-          className="btn-accent h-full rounded-full"
+          className="bar-fill h-full rounded-full"
           initial={false}
           animate={{ width: `${Math.max(3, p.ratio * 100)}%` }}
           transition={{ type: 'spring', stiffness: 80, damping: 20 }}
@@ -146,7 +146,7 @@ export function Toggle({ checked, onChange, label, hint }: { checked: boolean; o
         <div className="font-medium">{label}</div>
         {hint && <div className="text-xs text-muted">{hint}</div>}
       </div>
-      <div className={`relative h-7 w-12 rounded-full ${checked ? 'btn-accent' : 'bg-black/35'}`}>
+      <div className={`relative h-7 w-12 rounded-full ${checked ? 'btn-accent' : 'bg-track'}`}>
         <motion.div
           className="absolute top-1 h-5 w-5 rounded-full bg-white shadow"
           animate={{ left: checked ? 24 : 4 }}

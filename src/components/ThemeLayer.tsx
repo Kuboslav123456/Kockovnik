@@ -10,6 +10,10 @@ export function ThemeLayer({ themeId, dice }: { themeId: ThemeId; dice?: boolean
   useEffect(() => {
     const root = document.documentElement
     Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v))
+    root.dataset.style = theme.style
+    root.style.colorScheme = theme.scheme
+    document.body.style.background = theme.base
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.base)
   }, [theme])
 
   return (
@@ -25,12 +29,17 @@ export function ThemeLayer({ themeId, dice }: { themeId: ThemeId; dice?: boolean
           style={{ background: theme.background }}
         >
           {theme.overlay && (
-            <div className="absolute inset-0" style={{ backgroundImage: theme.overlay, backgroundSize: theme.id === 'casino' ? '4px 4px' : undefined }} />
+            <div
+              className="absolute inset-0"
+              style={{ backgroundImage: theme.overlay, backgroundSize: theme.overlaySize, mixBlendMode: theme.scheme === 'light' ? 'multiply' : undefined, opacity: theme.scheme === 'light' ? 0.5 : 1 }}
+            />
           )}
           {theme.decor === 'stars' && <Stars />}
           {theme.decor === 'embers' && <Embers />}
           {theme.decor === 'grid' && <NeonGrid />}
-          <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% 40%, transparent 50%, rgba(0,0,0,0.55) 100%)' }} />
+          {theme.vignette && (
+            <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 90% at 50% 40%, transparent 50%, rgba(0,0,0,0.55) 100%)' }} />
+          )}
         </motion.div>
       </AnimatePresence>
       <AnimatePresence>{dice && <FloatingDice key="dice" />}</AnimatePresence>

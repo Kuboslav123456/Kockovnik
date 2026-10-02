@@ -39,7 +39,7 @@ export function NewGame() {
 
   return (
     <Screen>
-      <Header title="Nová hra" />
+      <Header title="Nová kapitola" />
 
       <Section title={`Hráči · ${selected.length}/6`}>
         <div className="flex flex-col gap-2">
@@ -150,7 +150,7 @@ export function NewGame() {
         </AnimatePresence>
       </Section>
 
-      <div className="safe-bottom sticky bottom-0 z-30 mt-auto px-4 pt-8" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 40%, transparent)' }}>
+      <div className="safe-bottom sticky bottom-0 z-30 mt-auto px-4 pt-8" style={{ background: 'linear-gradient(to top, var(--t-sheet) 45%, transparent)' }}>
         <div>
           <Btn variant="accent" className="w-full !rounded-3xl py-5 text-xl" disabled={!canStart} onClick={start}>
             {selected.length < 2 ? 'Vyber aspoň 2 hráčov' : `Hrať do ${fmt(target)} 🎲`}

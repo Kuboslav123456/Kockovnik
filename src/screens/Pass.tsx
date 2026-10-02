@@ -37,7 +37,7 @@ export function Pass({ initialId }: { initialId?: string }) {
 
   const level = levelFromXp(profile.xp)
   const levels = Array.from({ length: MAX_LEVEL }, (_, i) => i + 1)
-  const pos = (lvl: number) => ({ x: Math.sin((lvl - 1) * 0.85) * AMP, y: (lvl - 1) * STEP + 50 })
+  const pos = (lvl: number) => ({ x: Math.sin((lvl - 1) * 0.85) * AMP, y: (lvl - 1) * STEP + 84 })
   const width = 360
   const cx = width / 2
   const pathFor = (to: number) =>
@@ -90,9 +90,9 @@ export function Pass({ initialId }: { initialId?: string }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="relative mx-auto mt-4 pb-16"
-        style={{ width, height: MAX_LEVEL * STEP + 20 }}
+        style={{ width, height: MAX_LEVEL * STEP + 60 }}
       >
-        <svg className="absolute inset-0" width={width} height={MAX_LEVEL * STEP + 20}>
+        <svg className="absolute inset-0" width={width} height={MAX_LEVEL * STEP + 60}>
           <path d={pathFor(MAX_LEVEL)} fill="none" stroke="var(--t-border)" strokeWidth={6} strokeDasharray="2 12" strokeLinecap="round" />
           <motion.path
             d={pathFor(level)}

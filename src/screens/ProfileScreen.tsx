@@ -9,6 +9,7 @@ import { playEffect } from '../lib/effects'
 import type { BurstId, EffectId, FontId, KeypadId, Profile, SoundId } from '../lib/types'
 import { sfx } from '../lib/sound'
 import { Burst } from '../components/Burst'
+import { GenderPicker } from '../components/NewProfileForm'
 import { Avatar, Btn, Header, Screen, Section, Toggle, XpBar } from '../components/ui'
 
 export function ProfileScreen({ id }: { id: string }) {
@@ -54,7 +55,7 @@ function ProfileView({ profile }: { profile: Profile }) {
               value={name}
               maxLength={18}
               onChange={(e) => setName(e.target.value)}
-              className="themed min-w-0 flex-1 rounded-2xl border border-line bg-black/25 px-4 py-2 text-center text-xl font-bold text-ink outline-none focus:border-accent"
+              className="themed min-w-0 flex-1 rounded-2xl border border-line bg-field px-4 py-2 text-center text-xl font-bold text-ink outline-none focus:border-accent"
             />
             <Btn
               variant="accent"
@@ -75,6 +76,10 @@ function ProfileView({ profile }: { profile: Profile }) {
         <div className="mt-1 text-sm text-muted">⭐ {s.wins} {s.wins === 1 ? 'hviezda' : s.wins >= 2 && s.wins <= 4 ? 'hviezdy' : 'hviezd'}</div>
         <XpBar xp={profile.xp} className="mt-4 w-full" />
       </div>
+
+      <Section className="mt-4">
+        <GenderPicker value={profile.gender} onChange={(g) => set({ gender: g })} />
+      </Section>
 
       <Section className="mt-5">
         <div className="grid grid-cols-4 gap-2 text-center">
@@ -102,14 +107,14 @@ function ProfileView({ profile }: { profile: Profile }) {
               key={a}
               whileTap={{ scale: 0.85 }}
               onClick={() => set({ avatar: a })}
-              className={`themed grid aspect-square place-items-center rounded-xl text-2xl ${profile.avatar === a ? 'glow bg-surface-strong' : 'bg-black/20'}`}
+              className={`themed grid aspect-square place-items-center rounded-xl text-2xl ${profile.avatar === a ? 'glow bg-surface-strong' : 'bg-surface'}`}
             >
               {a}
             </motion.button>
           ))}
           {lockedAvatarPacks.flatMap((k) =>
             AVATAR_PACKS[k].map((a) => (
-              <div key={a} className="grid aspect-square place-items-center rounded-xl bg-black/20 text-sm text-muted" title={`Úroveň ${lockLevel('avatars', k)}`}>
+              <div key={a} className="grid aspect-square place-items-center rounded-xl bg-surface text-sm text-muted" title={`Úroveň ${lockLevel('avatars', k)}`}>
                 🔒
               </div>
             )),
@@ -273,7 +278,7 @@ function ProfileView({ profile }: { profile: Profile }) {
                 onClick={() => {
                   set({ effectId: e })
                   const v = THEMES[profile.themeId].vars
-                  playEffect(e, [v['--t-accent'], v['--t-accent2'], '#ffffff'])
+                  playEffect(e, [v['--t-accent'], v['--t-accent2'], v['--t-accent3']])
                 }}
               >
                 <span className="text-2xl">{open ? EFFECTS[e].icon : '🔒'}</span>

@@ -6,11 +6,11 @@ import { ACHIEVEMENTS, ACHIEVEMENT_MAP, ACHIEVEMENT_XP, levelFromXp, REWARDS } f
 const KEY = 'kockovnik:v1'
 
 const initial: AppState = {
-  version: 1,
+  version: 2,
   profiles: [],
   activeGame: null,
   history: [],
-  settings: { sound: true, vibration: true, menuThemeId: 'wood' },
+  settings: { sound: true, vibration: true, menuThemeId: 'manuscript', romanKeys: false },
   lastResult: null,
 }
 
@@ -27,8 +27,14 @@ function load(): AppState {
     if (!raw) return initial
     const parsed = JSON.parse(raw) as AppState
     // staršie profily nemajú nové kozmetické polia
-    const profiles = (parsed.profiles ?? []).map((p) => ({ ...PROFILE_DEFAULTS, ...p }))
-    return { ...initial, ...parsed, profiles, settings: { ...initial.settings, ...parsed.settings } }
+    let profiles = (parsed.profiles ?? []).map((p) => ({ ...PROFILE_DEFAULTS, ...p }))
+    let settings = { ...initial.settings, ...parsed.settings }
+    // v1 → v2: Rukopis sa stal predvoleným vzhľadom. Drevo bolo predvolené, nie vybrané – prepni ho.
+    if ((parsed.version ?? 1) < 2) {
+      profiles = profiles.map((p) => (p.themeId === 'wood' ? { ...p, themeId: 'manuscript' as const } : p))
+      if (settings.menuThemeId === 'wood') settings = { ...settings, menuThemeId: 'manuscript' }
+    }
+    return { ...initial, ...parsed, version: 2, profiles, settings }
   } catch {
     return initial
   }
@@ -66,14 +72,15 @@ export const uid = () =>
 
 // ---------- Profily ----------
 
-export function createProfile(name: string, avatar: string): Profile {
+export function createProfile(name: string, avatar: string, gender: Profile['gender'] = null): Profile {
   const p: Profile = {
     id: uid(),
     name: name.trim(),
     avatar,
+    gender,
     xp: 0,
     achievements: [],
-    themeId: 'wood',
+    themeId: 'manuscript',
     titleId: null,
     effectId: 'confetti',
     diceBackground: true,
@@ -173,13 +180,13 @@ export function finishGame(): GameResult | null {
   return result
 }
 
-/** Čerstvo odomknuté veci sa hneď zapnú, aby ich stôl videl už v ďalšej hre. */
+/** Čerstvo odomknuté veci sa hneď zapnú, aby ich stôl videl už v ďalšej hre.
+ *  Témy stola nie – menia celý vzhľad appky, tie si hráč vyberie sám v profile. */
 function autoEquip(p: Profile, xpAfter: number): Partial<Profile> {
   const from = levelFromXp(p.xp)
   const to = levelFromXp(xpAfter)
   const patch: Partial<Profile> = {}
   REWARDS.filter((r) => r.level > from && r.level <= to).forEach((r) => {
-    if (r.kind === 'theme') patch.themeId = r.id
     if (r.kind === 'effect') patch.effectId = r.id
     if (r.kind === 'keypad') patch.keypadId = r.id
     if (r.kind === 'burst') patch.burstId = r.id

@@ -17,7 +17,7 @@ export function Stats() {
   if (!app.history.length) {
     return (
       <Screen>
-        <Header title="Štatistiky" />
+        <Header title="Letopisy" />
         <div className="px-6 py-20 text-center text-muted">
           <div className="text-5xl">📊</div>
           <div className="mt-3">Zatiaľ žiadne odohrané hry.</div>
@@ -29,7 +29,7 @@ export function Stats() {
 
   return (
     <Screen className="safe-bottom pb-8">
-      <Header title="Štatistiky" />
+      <Header title="Letopisy" />
 
       <Section>
         <div className="grid grid-cols-3 gap-2 text-center">
@@ -51,8 +51,8 @@ export function Stats() {
                   <div className="text-[10px] text-muted">úspešnosť</div>
                 </div>
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/30">
-                <motion.div className="btn-accent h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${s.winRate * 100}%` }} transition={{ delay: 0.2 + i * 0.05, type: 'spring', stiffness: 60, damping: 16 }} />
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-track">
+                <motion.div className="bar-fill h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${s.winRate * 100}%` }} transition={{ delay: 0.2 + i * 0.05, type: 'spring', stiffness: 60, damping: 16 }} />
               </div>
               <div className="mt-3 grid grid-cols-5 gap-1 text-center text-sm">
                 <Mini label="hry" value={s.games} />

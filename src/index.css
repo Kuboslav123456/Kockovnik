@@ -3,26 +3,47 @@
 @theme inline {
   --color-accent: var(--t-accent);
   --color-accent2: var(--t-accent2);
+  --color-accent3: var(--t-accent3);
   --color-surface: var(--t-surface);
   --color-surface-strong: var(--t-surface-strong);
   --color-line: var(--t-border);
+  --color-rule: var(--t-line);
+  --color-rule-strong: var(--t-line-strong);
+  --color-track: var(--t-track);
   --color-ink: var(--t-text);
   --color-muted: var(--t-muted);
+  --color-faint: var(--t-faint);
   --color-on-accent: var(--t-on-accent);
-  --font-sans: 'Rubik Variable', system-ui, sans-serif;
+  --color-field: var(--t-input);
+  --color-sheet: var(--t-sheet);
+  --font-sans: var(--t-font-body);
+  --font-display: var(--t-font-display);
+  --font-caps: var(--t-font-caps);
 }
 
+/* predvolené hodnoty = téma Rukopis (ThemeLayer ich prepíše podľa aktívnej témy) */
 :root {
-  --t-accent: #f5a524;
-  --t-accent2: #ff7a45;
-  --t-surface: rgba(255, 236, 214, 0.07);
-  --t-surface-strong: rgba(255, 236, 214, 0.13);
-  --t-border: rgba(255, 220, 180, 0.14);
-  --t-text: #fff4e6;
-  --t-muted: rgba(255, 236, 214, 0.6);
-  --t-glow: rgba(245, 165, 36, 0.35);
-  --t-on-accent: #2a1606;
-  color-scheme: dark;
+  --t-accent: #9a2a1c;
+  --t-accent2: #b8892c;
+  --t-accent3: #e9c66a;
+  --t-surface: rgba(154, 42, 28, 0.06);
+  --t-surface-strong: rgba(154, 42, 28, 0.1);
+  --t-border: rgba(43, 29, 18, 0.2);
+  --t-text: #2b1d12;
+  --t-muted: #5a3e24;
+  --t-faint: #b4a07a;
+  --t-glow: rgba(184, 137, 44, 0.35);
+  --t-on-accent: #f3e4c2;
+  --t-track: rgba(43, 29, 18, 0.15);
+  --t-line: rgba(43, 29, 18, 0.2);
+  --t-line-strong: rgba(43, 29, 18, 0.35);
+  --t-sheet: #efdcb4;
+  --t-input: rgba(255, 249, 232, 0.55);
+  --t-font-body: 'IM Fell English', 'EB Garamond', Georgia, serif;
+  --t-font-display: 'UnifrakturMaguntia', 'EB Garamond', serif;
+  --t-font-caps: 'IM Fell English SC', 'EB Garamond', Georgia, serif;
+  --t-display-weight: 400;
+  color-scheme: light;
 }
 
 html,
@@ -33,7 +54,7 @@ body,
 
 body {
   margin: 0;
-  background: #120a05;
+  background: #e6cf9e;
   color: var(--t-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -41,6 +62,19 @@ body {
   overscroll-behavior: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* gotické písmo – iniciály, logo, „Kolo …“ */
+.font-display {
+  font-family: var(--t-font-display);
+  font-weight: var(--t-display-weight);
+}
+/* kapitálky – tlačidlá, labely, navigácia.
+   font-synthesis: záložný EB Garamond kreslí pravé kapitálky pre č/š/ž, IM Fell SC ich má priamo */
+.font-caps {
+  font-family: var(--t-font-caps);
+  font-variant-caps: small-caps;
+  font-synthesis: none;
 }
 
 input {
@@ -248,4 +282,172 @@ input {
   color: var(--t-accent);
   text-shadow: 0 0 6px var(--t-glow), 0 0 18px var(--t-glow);
   font-size: 0.82em;
+}
+
+/* ---------- Štýl Rukopis (svetlé témy s ostrými rohmi) ---------- */
+[data-style='manuscript'] .glass,
+[data-style='manuscript'] .glass-strong {
+  border-radius: 0 !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+[data-style='manuscript'] .glass {
+  background: rgba(255, 248, 228, 0.28);
+  border: 1px solid var(--t-line);
+}
+[data-style='manuscript'] .glass-strong {
+  background: rgba(154, 42, 28, 0.08);
+  border: 1px solid var(--t-line-strong);
+}
+[data-style='manuscript'] .glow {
+  box-shadow: inset 4px 0 0 var(--t-accent);
+  border-color: var(--t-accent) !important;
+}
+[data-style='manuscript'] .text-glow {
+  text-shadow: none;
+}
+/* hlavné tlačidlo: rumelka, zlatý rám a vonkajší červený lem */
+[data-style='manuscript'] .cta {
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+  border: 2px solid var(--t-accent2);
+  box-shadow: 0 0 0 3px var(--t-accent);
+  border-radius: 0 !important;
+  font-family: var(--t-font-caps);
+  font-variant-caps: small-caps;
+  font-synthesis: none;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+}
+[data-style='manuscript'] .shimmer {
+  background: linear-gradient(110deg, transparent 20%, rgba(233, 198, 106, 0.45) 40%, transparent 60%);
+  background-size: 200% 100%;
+}
+
+/* výplň progress barov */
+.bar-fill {
+  background: linear-gradient(90deg, var(--t-accent), var(--t-accent2));
+}
+[data-style='manuscript'] .bar-fill {
+  background: linear-gradient(90deg, var(--t-accent2), var(--t-accent3));
+}
+.bar-fill-ink {
+  background: var(--t-text);
+  opacity: 0.85;
+}
+[data-style='glass'] .bar-fill-ink {
+  background: var(--t-muted);
+}
+
+/* iniciála hráča na ťahu: rumelkový box so zlatým rámom */
+.initial-box {
+  display: inline-grid;
+  place-items: center;
+  font-family: var(--t-font-display);
+  font-weight: var(--t-display-weight);
+  color: var(--t-on-accent);
+  background: var(--t-accent);
+  border: 2px solid var(--t-accent2);
+  line-height: 1;
+}
+.initial-box-logo {
+  border-width: 3px;
+  box-shadow: inset 0 0 0 3px var(--t-accent), inset 0 0 0 5px var(--t-accent3);
+}
+[data-style='glass'] .initial-box {
+  border-radius: 0.6rem;
+}
+
+/* rám strany */
+.page-frame {
+  border: 1.5px solid var(--t-accent);
+  outline: 5px double var(--t-accent2);
+  outline-offset: 4px;
+  pointer-events: none;
+}
+[data-style='glass'] .page-frame {
+  border-radius: 1.75rem;
+  opacity: 0.55;
+}
+
+/* vosková pečať */
+.wax-seal {
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #c8402c, #7a1a10 70%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35), inset 0 0 0 3px rgba(122, 26, 16, 0.6), inset 0 0 0 5px rgba(243, 201, 184, 0.25);
+  color: #f3c9b8;
+  display: grid;
+  place-items: center;
+  font-family: 'UnifrakturMaguntia', 'EB Garamond', serif;
+  line-height: 1;
+}
+
+/* klávesnica v štýle Rukopis (predvolená „klasická“ klávesnica tejto témy) */
+[data-style='manuscript'] .key {
+  border-radius: 0;
+}
+[data-style='manuscript'] .key-classic {
+  background: transparent;
+  border: 1px solid rgba(43, 29, 18, 0.3);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--t-text);
+  font-family: var(--t-font-body);
+  font-weight: 400;
+}
+[data-style='manuscript'] .key-classic:active {
+  background: rgba(154, 42, 28, 0.1);
+}
+[data-style='manuscript'] .key-classic.key-quick {
+  border-color: var(--t-accent2);
+  background: rgba(184, 137, 44, 0.12);
+}
+[data-style='manuscript'] .key-classic.key-action {
+  border-color: rgba(43, 29, 18, 0.4);
+  font-family: var(--t-font-caps);
+  font-variant-caps: small-caps;
+  font-synthesis: none;
+}
+[data-style='manuscript'] .key-primary.key-classic {
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+  border: 2px solid var(--t-accent2);
+  font-family: var(--t-font-caps);
+  font-variant-caps: small-caps;
+  font-synthesis: none;
+}
+
+.avatar-disc {
+  background: var(--t-surface-strong);
+  border: 1px solid var(--t-border);
+}
+.avatar-glow {
+  box-shadow: 0 0 0 2px var(--t-accent), 0 0 18px -2px var(--t-glow);
+}
+
+/* váha číslic: Rukopis 400, ostatné témy čierne */
+.num-weight {
+  font-weight: var(--t-display-weight);
+}
+
+/* Tailwind v4 dáva utility do @layer – !important vo vrstve by inak prebil tieto pravidlá,
+   preto ostré rohy Rukopisu patria do tej istej vrstvy (vyhrá vyššia špecificita). */
+@layer utilities {
+  [data-style='manuscript'] .glass,
+  [data-style='manuscript'] .glass-strong,
+  [data-style='manuscript'] .cta,
+  [data-style='manuscript'] .key {
+    border-radius: 0 !important;
+  }
+}
+
+/* IM Fell má jedinú hrúbku – žiadne umelé „dotučňovanie“ */
+[data-style='manuscript'] body {
+  font-synthesis: style;
+}
+
+[data-style='manuscript'] .bg-track,
+[data-style='manuscript'] .bar-fill,
+[data-style='manuscript'] .bar-fill-ink {
+  border-radius: 0;
 }

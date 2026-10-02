@@ -7,31 +7,21 @@ import type { BurstId } from '../lib/types'
 export function Burst({ burst, points, onDone }: { burst: BurstId; points: number; onDone: () => void }) {
   const label = `+${fmt(points)}`
 
-  if (points === 0) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10, scale: 0.6 }}
-        animate={{ opacity: [0, 1, 1, 0], y: -30, scale: 1 }}
-        transition={{ duration: 1.3, ease: 'easeOut' }}
-        onAnimationComplete={onDone}
-        className="pointer-events-none absolute right-4 top-2 text-xl font-black text-muted"
-      >
-        Prepadol 💨
-      </motion.div>
-    )
-  }
+  // nula sa v hre zobrazuje preškrtnutím riadku, nie animáciou
+  if (points === 0) return null
 
   if (burst === 'explode') return <Explode label={label} onDone={onDone} />
   if (burst === 'lightning') return <Lightning label={label} onDone={onDone} />
   if (burst === 'fire') return <Fire label={label} onDone={onDone} />
 
+  // Vyletenie: číslo vyletí nad riadok a zmizne
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.6 }}
-      animate={{ opacity: [0, 1, 1, 0], y: -36, scale: 1.15 }}
-      transition={{ duration: 1.3, ease: 'easeOut' }}
+      initial={{ opacity: 0, y: 8, scale: 0.4 }}
+      animate={{ opacity: [0, 1, 0], y: -44, scale: [0.4, 1.25, 1] }}
+      transition={{ duration: 1.1, ease: [0.2, 0.9, 0.3, 1] }}
       onAnimationComplete={onDone}
-      className="text-glow pointer-events-none absolute right-4 top-2 text-2xl font-black text-accent"
+      className="num-weight text-glow pointer-events-none absolute right-14 top-0 text-2xl text-accent"
     >
       {label}
     </motion.div>

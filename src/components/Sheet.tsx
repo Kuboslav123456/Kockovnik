@@ -23,11 +23,11 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
             exit={{ y: '100%' }}
             transition={{ type: 'spring', stiffness: 340, damping: 34 }}
             className="themed glass-strong safe-bottom relative w-full max-w-md rounded-t-[2rem] px-4 pt-3"
-            style={{ background: 'color-mix(in srgb, var(--t-surface-strong), #0b0806 72%)' }}
+            style={{ background: 'var(--t-sheet)' }}
           >
             <div className="touch-none cursor-grab" onPointerDown={(e) => drag.start(e)}>
-              <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-white/25" />
-              {title && <div className="pb-3 text-lg font-bold">{title}</div>}
+              <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-faint" />
+              {title && <div className="font-caps pb-3 text-xl tracking-wide">{title}</div>}
             </div>
             <div className="pb-2">{children}</div>
           </motion.div>

@@ -13,7 +13,7 @@ export function Profiles() {
 
   return (
     <Screen className="safe-bottom">
-      <Header title="Profily" />
+      <Header title="Družina" />
       <Section>
         <div className="flex flex-col gap-2">
           {app.profiles.map((p, i) => {

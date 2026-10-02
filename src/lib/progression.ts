@@ -122,6 +122,7 @@ const sound = (level: number, id: SoundId): Reward => ({ level, kind: 'sound', i
 
 /** Cesta odmien – každá úroveň niečo odomyká, väčšina sa prejaví počas ťahu hráča. */
 export const REWARDS: Reward[] = [
+  theme(1, 'manuscript', 'Pergamen, gotické iniciály a zlato'),
   theme(1, 'wood', 'Klasický stôl z tmavého dreva'),
   avatars(2, 'pack1'),
   theme(3, 'casino', 'Zelené sukno a zlaté akcenty'),
@@ -179,7 +180,7 @@ export function unlockedFor(profile: Pick<Profile, 'xp'>) {
 /** Čo hráč reálne používa – ak má zvolené niečo, čo nemá odomknuté, použije sa základ. */
 export function cosmetics(profile: Profile | undefined) {
   const base = {
-    themeId: 'wood' as ThemeId,
+    themeId: 'manuscript' as ThemeId,
     effectId: 'confetti' as EffectId,
     keypadId: 'classic' as KeypadId,
     burstId: 'float' as BurstId,
@@ -205,7 +206,7 @@ export function cosmetics(profile: Profile | undefined) {
 
 /** Témy, ktoré si niekto zo stola už odomkol (pre menu) */
 export function themesUnlockedByAnyone(profiles: Profile[]): ThemeId[] {
-  const set = new Set<ThemeId>(['wood'])
+  const set = new Set<ThemeId>(['manuscript', 'wood'])
   profiles.forEach((p) => unlockedFor(p).themes.forEach((t) => set.add(t)))
   return [...set]
 }
