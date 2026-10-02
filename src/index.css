@@ -1,0 +1,143 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-accent: var(--t-accent);
+  --color-accent2: var(--t-accent2);
+  --color-surface: var(--t-surface);
+  --color-surface-strong: var(--t-surface-strong);
+  --color-line: var(--t-border);
+  --color-ink: var(--t-text);
+  --color-muted: var(--t-muted);
+  --color-on-accent: var(--t-on-accent);
+  --font-sans: 'Rubik Variable', system-ui, sans-serif;
+}
+
+:root {
+  --t-accent: #f5a524;
+  --t-accent2: #ff7a45;
+  --t-surface: rgba(255, 236, 214, 0.07);
+  --t-surface-strong: rgba(255, 236, 214, 0.13);
+  --t-border: rgba(255, 220, 180, 0.14);
+  --t-text: #fff4e6;
+  --t-muted: rgba(255, 236, 214, 0.6);
+  --t-glow: rgba(245, 165, 36, 0.35);
+  --t-on-accent: #2a1606;
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #120a05;
+  color: var(--t-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Všetko tematické plynule mení farby pri zmene témy */
+.themed,
+.themed * {
+  transition-property: background-color, border-color, color, box-shadow, fill, stroke;
+  transition-duration: 600ms;
+  transition-timing-function: ease;
+}
+
+.glass {
+  background: var(--t-surface);
+  border: 1px solid var(--t-border);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.glass-strong {
+  background: var(--t-surface-strong);
+  border: 1px solid var(--t-border);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+
+.glow {
+  box-shadow: 0 0 0 1px var(--t-accent), 0 0 28px -4px var(--t-glow), 0 10px 30px -12px var(--t-glow);
+}
+
+.text-glow {
+  text-shadow: 0 0 24px var(--t-glow);
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--t-accent), var(--t-accent2));
+  color: var(--t-on-accent);
+  box-shadow: 0 8px 24px -10px var(--t-glow), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.safe-top {
+  padding-top: max(env(safe-area-inset-top), 12px);
+}
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Zlatý rámik */
+.gold-frame {
+  background: conic-gradient(from 0deg, #fff3b0, #f5b301, #a86b00, #ffe27a, #f5b301, #fff3b0);
+  animation: spin 6s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+@keyframes rise {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(-110vh) scale(0.4); opacity: 0; }
+}
+@keyframes gridmove {
+  to { background-position: 0 48px; }
+}
+@keyframes shimmer {
+  to { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.35) 40%, transparent 60%);
+  background-size: 200% 100%;
+  animation: shimmer 2.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
