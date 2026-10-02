@@ -42,12 +42,29 @@ export function Header({ title, right, onBack }: { title: string; right?: ReactN
       className="safe-top sticky top-0 z-20 flex items-center gap-2 px-4 pb-3"
       style={{ background: 'linear-gradient(to bottom, var(--t-sheet) 55%, transparent)' }}
     >
-      <Btn variant="glass" className="!rounded-full !px-0 h-11 w-11 grid place-items-center text-xl" onClick={onBack ?? (() => nav.back())} aria-label="Späť">
-        ←
+      <Btn variant="glass" className="!rounded-full !p-0 h-11 w-11 grid shrink-0 place-items-center" onClick={onBack ?? (() => nav.back())} aria-label="Späť">
+        <HistoricArrow />
       </Btn>
       <h1 className="font-caps flex-1 truncate text-2xl tracking-wide">{title}</h1>
       {right}
     </div>
+  )
+}
+
+/** Šíp ako zo stredovekého rukopisu: ostnatý hrot, tenké telo a perie. Kreslí sa farbou textu. */
+export function HistoricArrow({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 30 16" width="30" height="16" className={className} aria-hidden="true">
+      {/* hrot s ostňami */}
+      <path d="M1.5 8 L9 2.6 L7.4 8 L9 13.4 Z" fill="currentColor" />
+      {/* telo šípu */}
+      <line x1="7" y1="8" x2="27" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      {/* perie */}
+      <g stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" fill="none">
+        <path d="M19 8 L22 3.6 M22 8 L25 3.6 M25 8 L28 3.6" />
+        <path d="M19 8 L22 12.4 M22 8 L25 12.4 M25 8 L28 12.4" />
+      </g>
+    </svg>
   )
 }
 
