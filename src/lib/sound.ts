@@ -6,18 +6,53 @@ let ctx: AudioContext | null = null
 /** vygenerované struny loutny/harfy sa držia pre aktuálny kontext */
 let plucks = new Map<string, AudioBuffer>()
 
+function createContext(): AudioContext {
+  const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+  const c = new Ctor()
+  plucks = new Map()
+  return c
+}
+
+/**
+ * Mobilné prehliadače zvukový engine uspia pri zamknutí obrazovky, hovore či prepnutí appky
+ * (iPhone stav „interrupted“, inde „suspended“). Skúsime ho prebudiť; ak sa nerozbehne,
+ * zahodíme ho a pri ďalšom zvuku (v rámci dotyku) vytvoríme nový – ten sa rozbehne vždy.
+ */
+function wake(c: AudioContext) {
+  const state = c.state as AudioContextState | 'interrupted'
+  if (state === 'running' || state === 'closed') return
+  c.resume().catch(() => {})
+  setTimeout(() => {
+    if (ctx === c && c.state !== 'running' && document.visibilityState === 'visible') {
+      ctx = null
+      c.close().catch(() => {})
+    }
+  }, 400)
+}
+
 function audio(): AudioContext | null {
   if (!getState().settings.sound) return null
   try {
-    if (!ctx || ctx.state === 'closed') {
-      ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
-      plucks = new Map()
-    }
-    if (ctx.state === 'suspended') void ctx.resume().catch(() => {})
+    if (!ctx || ctx.state === 'closed') ctx = createContext()
+    wake(ctx)
     return ctx
   } catch {
+    ctx = null
     return null
   }
+}
+
+// prebudiť zvuk pri každom dotyku (iOS to dovolí len v rámci gesta) a po návrate z pozadia
+if (typeof window !== 'undefined') {
+  const nudge = () => {
+    if (ctx) wake(ctx)
+  }
+  window.addEventListener('pointerdown', nudge, { capture: true, passive: true })
+  window.addEventListener('touchend', nudge, { capture: true, passive: true })
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') nudge()
+  })
+  window.addEventListener('pageshow', nudge)
 }
 
 function tone(freq: number, start: number, dur: number, type: OscillatorType = 'sine', vol = 0.18, slideTo?: number) {

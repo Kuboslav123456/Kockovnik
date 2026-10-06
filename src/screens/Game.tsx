@@ -354,7 +354,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
         >
           <div className="grid grid-cols-4 gap-1.5">
             {QUICK.map((q) => (
-              <Key key={q} skin={cur.keypadId} className="key-quick tabular min-h-11 whitespace-nowrap px-1 text-[15px] font-semibold" onClick={() => quick(q)}>
+              <Key key={q} skin={cur.keypadId} className="key-quick tabular min-h-12 whitespace-nowrap px-1 text-[22px] font-semibold leading-none" onClick={() => quick(q)}>
                 +{q}
               </Key>
             ))}
