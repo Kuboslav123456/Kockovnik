@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNav } from '../nav'
 import { startGame, useApp } from '../lib/store'
-import { fmt } from '../lib/game'
+import { fmt, nextStartOrder } from '../lib/game'
 import { levelFromXp } from '../lib/progression'
 import { Avatar, Btn, Header, Screen, Section, Toggle } from '../components/ui'
 import { NewProfileForm } from '../components/NewProfileForm'
@@ -16,7 +16,7 @@ export function NewGame() {
   const last = app.history[app.history.length - 1]
 
   const [selected, setSelected] = useState<string[]>(() =>
-    last ? last.playerIds.filter((id) => app.profiles.some((p) => p.id === id)) : [],
+    last ? nextStartOrder(last.playerIds).filter((id) => app.profiles.some((p) => p.id === id)) : [],
   )
   const [target, setTarget] = useState(last?.target ?? 10000)
   const [custom, setCustom] = useState(!TARGETS.includes(last?.target ?? 10000))

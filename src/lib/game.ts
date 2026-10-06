@@ -122,3 +122,8 @@ export function toRoman(n: number): string {
   for (const [v, r] of map) while (n >= v) { out += r; n -= v }
   return out
 }
+
+/** Ďalšia hra s rovnakou partiou: začína hráč, ktorý bol minule druhý (férové striedanie). */
+export function nextStartOrder(playerIds: string[]): string[] {
+  return playerIds.length > 1 ? [...playerIds.slice(1), playerIds[0]] : playerIds
+}

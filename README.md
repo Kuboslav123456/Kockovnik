@@ -73,6 +73,15 @@ Po každej dohratej hre otvorí každý hráč truhlicu s náhodnou kockou (24 k
 - Každá truhlica dá aj pár mincí (2 / 5 / 10). Duplikát sa premení na mince podľa vzácnosti (5 / 15 / 40 / 100 / 250).
 - Za mince sa dá vykovať chýbajúca kocka (30 / 90 / 240 / 600 / 1 500).
 - Obľúbená kocka sa točí vedľa zapisovanej hodnoty počas ťahu hráča.
+- **Sady:** 24 kociek je rozdelených do 6 sád po 4 (`DICE_SETS` v `src/lib/dice.ts`). Dokončená sada odomkne titul a pridá mince (50 až 500).
+
+## Virtuálne kocky
+
+V hre pod hodnotou je „Hodiť virtuálnymi kockami“. Hráč hodí 6 kockami, odloží bodujúce, môže hodiť zvyšné alebo zapísať. Keď nič nebodujúce nepadne, prepadol. Keď odloží všetkých šesť, hádže znova všetkými („horúce kocky“). Ako kocky sa použije obľúbená kocka hráča z Klenotnice.
+
+Bodovanie (`src/lib/scoring.ts`): jednotka 100, päťka 50, tri rovnaké = číslo × 100 (tri jednotky 1 000), každá ďalšia rovnaká kocka zdvojnásobí, postupka 1–6 = 1 500.
+
+Pri odvete a pri novej hre s rovnakou partiou začína ďalší hráč v poradí.
 
 ## Štruktúra
 

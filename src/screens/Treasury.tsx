@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNav } from '../nav'
 import { forgeDie, updateProfile, useApp } from '../lib/store'
-import { DICE, DIE_MAP, RARITIES, RARITY_ORDER, type DieDef } from '../lib/dice'
+import { DICE, DICE_SETS, DIE_MAP, RARITIES, RARITY_ORDER, setDone, type DieDef } from '../lib/dice'
 import { sfx } from '../lib/sound'
 import { fmt } from '../lib/game'
 import { Avatar, Btn, Header, Screen, Section } from '../components/ui'
@@ -78,6 +78,36 @@ export function Treasury({ initialId }: { initialId?: string }) {
         </p>
       </Section>
 
+      <Section title="Sady" className="mt-6">
+        <div className="flex flex-col gap-2">
+          {DICE_SETS.map((set) => {
+            const have = set.dice.filter((id) => (profile.dice[id] ?? 0) > 0).length
+            const done = setDone(profile.dice, set)
+            return (
+              <div key={set.id} className={`themed glass flex items-center gap-3 px-3 py-2.5 ${done ? 'glow' : ''}`}>
+                <span className="text-2xl">{set.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate">{set.name}</span>
+                    <span className={`shrink-0 text-xs ${done ? 'text-accent' : 'text-muted'}`}>{done ? '✓ dokončená' : `${have} / 4`}</span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    {set.dice.map((id) => (
+                      <div key={id} className="grid h-7 w-7 place-items-center">
+                        {(profile.dice[id] ?? 0) > 0 ? <Die3D die={DIE_MAP[id]} size={20} /> : <DieSilhouette size={20} />}
+                      </div>
+                    ))}
+                    <span className="ml-1 truncate text-[11px] italic text-muted">
+                      titul „{set.titleName}“ + {set.coins} 🪙
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </Section>
+
       {RARITY_ORDER.map((r) => {
         const list = DICE.filter((d) => d.rarity === r)
         const have = list.filter((d) => (profile.dice[d.id] ?? 0) > 0).length
@@ -131,6 +161,7 @@ function DieDetail({ die, profileId, onDone }: { die: DieDef; profileId: string;
   const count = profile.dice[die.id] ?? 0
   const cost = RARITIES[die.rarity].forge
   const isFav = profile.favoriteDie === die.id
+  const [completed, setCompleted] = useState<string[]>([])
 
   return (
     <div className="flex flex-col items-center pb-2 text-center">
@@ -156,6 +187,20 @@ function DieDetail({ die, profileId, onDone }: { die: DieDef; profileId: string;
             {isFav ? '★ Toto je tvoja obľúbená' : '★ Nastaviť ako obľúbenú'}
           </Btn>
           <p className="mt-2 text-xs text-muted">Obľúbenú kocku uvidia všetci počas tvojho ťahu.</p>
+          {completed.map((id) => {
+            const set = DICE_SETS.find((s) => s.id === id)!
+            return (
+              <motion.div
+                key={id}
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 14 }}
+                className="themed glass-strong glow mt-3 w-full px-3 py-2"
+              >
+                {set.icon} Sada „{set.name}“ dokončená! Titul „{set.titleName}“ a +{set.coins} 🪙
+              </motion.div>
+            )
+          })}
         </>
       ) : (
         <>
@@ -165,9 +210,11 @@ function DieDetail({ die, profileId, onDone }: { die: DieDef; profileId: string;
             className="mt-4 w-full"
             disabled={profile.coins < cost}
             onClick={() => {
-              if (forgeDie(profileId, die.id)) {
+              const done = forgeDie(profileId, die.id)
+              if (done) {
                 sfx.seal()
                 sfx.levelUp()
+                setCompleted(done)
               }
             }}
           >

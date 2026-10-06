@@ -9,6 +9,7 @@ import { playEffect } from '../lib/effects'
 import type { BurstId, EffectId, FontId, KeypadId, Profile, SoundId } from '../lib/types'
 import { sfx } from '../lib/sound'
 import { Burst } from '../components/Burst'
+import { SET_BY_TITLE } from '../lib/dice'
 import { GenderPicker } from '../components/NewProfileForm'
 import { Avatar, Btn, Header, Screen, Section, Toggle, XpBar } from '../components/ui'
 
@@ -260,7 +261,7 @@ function ProfileView({ profile }: { profile: Profile }) {
               </Btn>
             ) : (
               <span key={t} className="glass rounded-full px-4 py-2 text-sm text-muted">
-                🔒 úroveň {lockLevel('title', t)}
+                🔒 {SET_BY_TITLE[t] ? `sada ${SET_BY_TITLE[t].name}` : `úroveň ${lockLevel('title', t)}`}
               </span>
             ),
           )}

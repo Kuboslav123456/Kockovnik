@@ -2,13 +2,13 @@ import { animate, AnimatePresence, motion, useAnimationControls } from 'framer-m
 import { useEffect, useRef, useState } from 'react'
 import { useNav } from '../nav'
 import { startGame, useApp } from '../lib/store'
-import { deriveGame, fmt } from '../lib/game'
+import { deriveGame, fmt, nextStartOrder } from '../lib/game'
 import { ACHIEVEMENT_MAP, cosmetics, KIND_LABEL, levelFromXp, levelProgress, REWARDS, type Reward } from '../lib/progression'
 import { playEffect, wasEffectPlayed } from '../lib/effects'
 import { sfx } from '../lib/sound'
 import { THEMES } from '../lib/themes'
 import type { ChestResult, GameResult, PlayerResult, Profile } from '../lib/types'
-import { CHESTS, DIE_MAP, RARITIES } from '../lib/dice'
+import { CHESTS, DICE_SETS, DIE_MAP, RARITIES } from '../lib/dice'
 import { Die3D } from '../components/Die3D'
 import { Avatar, Btn, PlayerName } from '../components/ui'
 
@@ -49,7 +49,7 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
   const minutes = Math.max(1, Math.round((game.finishedAt - game.startedAt) / 60000))
 
   const rematch = () => {
-    startGame(game.playerIds, game.target, game.rules)
+    startGame(nextStartOrder(game.playerIds), game.target, game.rules)
     nav.reset({ name: 'game' })
   }
 
@@ -363,6 +363,20 @@ function ChestOpen({ chest }: { chest: ChestResult }) {
               <div className="mt-1 text-xs text-muted">
                 {chest.isNew ? '✦ Nová do Klenotnice!' : `Duplikát → +${RARITIES[die.rarity].coins} 🪙`} · truhlica +{CHESTS[chest.tier].coins} 🪙
               </div>
+              {(chest.completedSets ?? []).map((id) => {
+                const set = DICE_SETS.find((s) => s.id === id)!
+                return (
+                  <motion.div
+                    key={id}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.7, type: 'spring', stiffness: 260, damping: 12 }}
+                    className="mt-1.5 text-sm text-accent"
+                  >
+                    {set.icon} Sada „{set.name}“ dokončená! Titul „{set.titleName}“ +{set.coins} 🪙
+                  </motion.div>
+                )
+              })}
             </motion.div>
           )}
         </div>

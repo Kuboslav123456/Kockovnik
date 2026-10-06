@@ -1,6 +1,7 @@
 import type { BurstId, EffectId, FinishedGame, FontId, KeypadId, Profile, SoundId, ThemeId } from './types'
 import { THEMES } from './themes'
 import { playerStats, wasLastAtSomePoint } from './game'
+import { DICE_SETS, SET_TITLES, setDone } from './dice'
 
 // ---------- Úrovne ----------
 
@@ -42,6 +43,8 @@ export const TITLES: Record<string, string> = {
   master: 'Pán kociek',
   mage: 'Kockový mág',
   legend: 'Legenda stola',
+  // tituly za dokončené sady kociek v Klenotnici
+  ...SET_TITLES,
 }
 
 export const EFFECTS: Record<EffectId, { name: string; icon: string }> = {
@@ -156,7 +159,7 @@ export function rewardsUpTo(level: number) {
   return REWARDS.filter((r) => r.level <= level)
 }
 
-export function unlockedFor(profile: Pick<Profile, 'xp'>) {
+export function unlockedFor(profile: Pick<Profile, 'xp'> & Partial<Pick<Profile, 'dice'>>) {
   const level = levelFromXp(profile.xp)
   const got = rewardsUpTo(level)
   const ids = <K extends Reward['kind']>(kind: K) =>
@@ -166,7 +169,7 @@ export function unlockedFor(profile: Pick<Profile, 'xp'>) {
   return {
     level,
     themes: ids('theme'),
-    titles: ids('title'),
+    titles: [...ids('title'), ...DICE_SETS.filter((s) => setDone(profile.dice, s)).map((s) => s.title)],
     effects: ['confetti' as EffectId, ...ids('effect')],
     keypads: ['classic' as KeypadId, ...ids('keypad')],
     bursts: ['float' as BurstId, ...ids('burst')],

@@ -28,6 +28,8 @@ export interface Profile {
   coins: number
   /** obľúbená kocka – ukazuje sa počas ťahu hráča */
   favoriteDie: string | null
+  /** sady kociek, za ktoré už hráč dostal odmenu */
+  setsDone: string[]
   createdAt: number
 }
 
@@ -81,6 +83,8 @@ export interface ChestResult {
   isNew: boolean
   /** mince spolu (truhlica + prípadný duplikát) */
   coins: number
+  /** sady, ktoré táto kocka dokončila (ich mince sú už v `coins`) */
+  completedSets?: string[]
 }
 
 export interface PlayerResult {

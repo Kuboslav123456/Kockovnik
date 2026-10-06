@@ -13,6 +13,7 @@ import { Sheet } from '../components/Sheet'
 import { Burst } from '../components/Burst'
 import { Die3D } from '../components/Die3D'
 import { DIE_MAP } from '../lib/dice'
+import { DiceRoller } from '../components/DiceRoller'
 
 const QUICK = [50, 100, 500, 1000]
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫']
@@ -20,7 +21,7 @@ const ROMAN_KEYS: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III' }
 
 const UNKNOWN: Omit<Profile, 'id'> = {
   name: '?', avatar: '❔', xp: 0, achievements: [], themeId: 'manuscript', titleId: null, effectId: 'confetti',
-  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'medieval', dice: {}, coins: 0, favoriteDie: null, createdAt: 0,
+  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'medieval', dice: {}, coins: 0, favoriteDie: null, setsDone: [], createdAt: 0,
 }
 
 /** Rozdelí meno na iniciálu a zvyšok (správne aj pre znaky mimo BMP). */
@@ -77,6 +78,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
   const [thunder, setThunder] = useState(0)
   const [showHistory, setShowHistory] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
+  const [showRoller, setShowRoller] = useState(false)
   const shake = useAnimationControls()
   const screen = useAnimationControls()
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -369,6 +371,17 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
               {value ? `+${fmt(value)}` : '0'}
             </motion.div>
           </div>
+          {!d.finished && (
+            <button
+              className="font-caps mt-1 min-h-9 px-3 text-sm text-muted underline decoration-accent2 decoration-dotted underline-offset-4"
+              onClick={() => {
+                sfx.tap(cur.soundId)
+                setShowRoller(true)
+              }}
+            >
+              🎲 Hodiť virtuálnymi kockami
+            </button>
+          )}
           <div className="h-4 text-xs text-accent">
             <AnimatePresence>
               {error && (
@@ -416,6 +429,19 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
           </div>
         </motion.div>
       </motion.div>
+
+      <Sheet open={showRoller} onClose={() => setShowRoller(false)} title={`Hádže ${current.name}`}>
+        <DiceRoller
+          key={`${current.id}-${game.turns.length}`}
+          die={favDie ?? DIE_MAP.bone}
+          sound={cur.soundId}
+          minEntry={game.rules.minEntry > 0 && d.totals[d.currentPlayerId] === 0 ? game.rules.minEntry : 0}
+          onCommit={(points) => {
+            setShowRoller(false)
+            commit(points)
+          }}
+        />
+      </Sheet>
 
       <Sheet open={showHistory} onClose={() => setShowHistory(false)} title="Kronika kôl">
         <RoundTable game={game} byId={byId} />

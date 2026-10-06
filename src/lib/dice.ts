@@ -96,3 +96,34 @@ export function rollDie(tier: ChestTier, rand: () => number = Math.random): DieD
   const pool = DICE.filter((d) => d.rarity === rarity)
   return pool[Math.floor(rand() * pool.length) % pool.length]
 }
+
+// ---------- Sady ----------
+
+export interface DiceSet {
+  id: string
+  name: string
+  icon: string
+  dice: string[]
+  /** titul za dokončenie (kľúč do TITLES) */
+  title: string
+  titleName: string
+  coins: number
+}
+
+export const DICE_SETS: DiceSet[] = [
+  { id: 'carver', name: 'Rezbárska dielňa', icon: '🪚', dice: ['oak', 'birch', 'bone', 'horn'], title: 'carver', titleName: 'Rezbár', coins: 50 },
+  { id: 'quarry', name: 'Kameňolom', icon: '⛏️', dice: ['clay', 'stone', 'slate', 'sandstone'], title: 'mason', titleName: 'Kamenár', coins: 50 },
+  { id: 'alchemy', name: 'Alchymistova polica', icon: '⚗️', dice: ['glass', 'pearl', 'cobalt', 'amber'], title: 'alchemist', titleName: 'Alchymista', coins: 120 },
+  { id: 'mint', name: 'Mincovňa', icon: '🏛️', dice: ['copper', 'bronze', 'silver', 'crest'], title: 'mintmaster', titleName: 'Mincmajster', coins: 250 },
+  { id: 'jewels', name: 'Kráľovská pokladnica', icon: '💎', dice: ['ruby', 'emerald', 'sapphire', 'jade'], title: 'jeweler', titleName: 'Klenotník', coins: 200 },
+  { id: 'fate', name: 'Brány osudu', icon: '🌌', dice: ['obsidian', 'starry', 'dragonbone', 'fate'], title: 'fatelord', titleName: 'Vládca osudu', coins: 500 },
+]
+
+export const SET_TITLES: Record<string, string> = Object.fromEntries(DICE_SETS.map((s) => [s.title, s.titleName]))
+export const SET_BY_TITLE: Record<string, DiceSet> = Object.fromEntries(DICE_SETS.map((s) => [s.title, s]))
+
+export const setDone = (dice: Record<string, number> | undefined, set: DiceSet) => set.dice.every((id) => (dice?.[id] ?? 0) > 0)
+
+/** Sady, ktoré sú teraz kompletné a ešte neboli odmenené */
+export const newlyCompletedSets = (dice: Record<string, number>, claimed: string[]) =>
+  DICE_SETS.filter((s) => !claimed.includes(s.id) && setDone(dice, s))

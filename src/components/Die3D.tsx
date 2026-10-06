@@ -1,5 +1,5 @@
-import { motion, useAnimationFrame, useMotionValue } from 'framer-motion'
-import { useRef } from 'react'
+import { animate, motion, useAnimationFrame, useMotionValue } from 'framer-motion'
+import { useEffect, useRef } from 'react'
 import type { DieDef } from '../lib/dice'
 
 const PIPS: Record<number, [number, number][]> = {
@@ -11,21 +11,62 @@ const PIPS: Record<number, [number, number][]> = {
   6: [[28, 24], [72, 24], [28, 50], [72, 50], [28, 76], [72, 76]],
 }
 
+/** natočenie (rotateX, rotateY), pri ktorom je daná stena vpredu */
+const FRONT: Record<number, [number, number]> = { 1: [0, 0], 6: [0, 180], 2: [0, -90], 5: [0, 90], 3: [-90, 0], 4: [90, 0] }
+
 /**
  * 3D kocka z Klenotnice. `idle` = pomaly sa točí, `interactive` = dá sa otáčať prstom.
  * Ostatné kocky stoja v pootočenej polohe, aby boli vidieť tri steny.
  */
-export function Die3D({ die, size = 64, idle = false, interactive = false, speed = 1 }: { die: DieDef; size?: number; idle?: boolean; interactive?: boolean; speed?: number }) {
+export function Die3D({
+  die,
+  size = 64,
+  idle = false,
+  interactive = false,
+  speed = 1,
+  rolling = false,
+  show = null,
+}: {
+  die: DieDef
+  size?: number
+  idle?: boolean
+  interactive?: boolean
+  speed?: number
+  /** rýchle točenie počas hodu */
+  rolling?: boolean
+  /** po hode dopadne touto stenou dopredu */
+  show?: number | null
+}) {
   const rx = useMotionValue(-24)
   const ry = useMotionValue(36)
   const drag = useRef<{ x: number; y: number } | null>(null)
   const half = size / 2
 
   useAnimationFrame((_, dt) => {
-    if (!idle || drag.current) return
+    if (drag.current) return
+    if (rolling) {
+      ry.set(ry.get() + dt * 0.9)
+      rx.set(rx.get() + dt * 0.65)
+      return
+    }
+    if (!idle || show != null) return
     ry.set(ry.get() + dt * 0.035 * speed)
     rx.set(rx.get() + dt * 0.012 * speed)
   })
+
+  // dopad: dotočí sa (aspoň o jednu otáčku) tak, aby hodené číslo bolo vpredu, s jemným náklonom
+  useEffect(() => {
+    if (show == null || rolling) return
+    const [bx, by] = FRONT[show]
+    const tx = bx - 14 + 360 * Math.round(rx.get() / 360)
+    const ty = by + 16 + 360 * (Math.round(ry.get() / 360) + 1)
+    const a = animate(rx, tx, { type: 'spring', stiffness: 120, damping: 14 })
+    const b = animate(ry, ty, { type: 'spring', stiffness: 120, damping: 14 })
+    return () => {
+      a.stop()
+      b.stop()
+    }
+  }, [show, rolling]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const faces: { n: number; t: string }[] = [
     { n: 1, t: `translateZ(${half}px)` },
