@@ -22,6 +22,12 @@ export interface Profile {
   burstId: BurstId
   fontId: FontId
   soundId: SoundId
+  /** Klenotnica: id kocky → počet kusov */
+  dice: Record<string, number>
+  /** mince za duplikáty, na kovanie chýbajúcich kociek */
+  coins: number
+  /** obľúbená kocka – ukazuje sa počas ťahu hráča */
+  favoriteDie: string | null
   createdAt: number
 }
 
@@ -68,12 +74,23 @@ export interface XpLine {
   xp: number
 }
 
+export interface ChestResult {
+  tier: 'wood' | 'iron' | 'gold'
+  dieId: string
+  /** nová kocka do zbierky (inak duplikát premenený na mince) */
+  isNew: boolean
+  /** mince spolu (truhlica + prípadný duplikát) */
+  coins: number
+}
+
 export interface PlayerResult {
   playerId: string
   xpBefore: number
   xpAfter: number
   lines: XpLine[]
   newAchievements: string[]
+  /** staršie výsledky (pred Klenotnicou) truhlicu nemajú */
+  chest?: ChestResult
 }
 
 export interface GameResult {

@@ -95,9 +95,10 @@ function ProfileView({ profile }: { profile: Profile }) {
             </div>
           ))}
         </div>
-        <Btn className="mt-2 w-full" onClick={() => nav.go({ name: 'pass', id: profile.id })}>
-          🗺️ Dobrodružstvo
-        </Btn>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Btn onClick={() => nav.go({ name: 'pass', id: profile.id })}>🗺️ Dobrodružstvo</Btn>
+          <Btn onClick={() => nav.go({ name: 'treasury', id: profile.id })}>💎 Klenotnica</Btn>
+        </div>
       </Section>
 
       <Section title="Avatar" className="mt-6">

@@ -23,6 +23,7 @@ export function Home() {
     { label: 'Družina', to: { name: 'profiles' } },
     { label: 'Dobrodružstvo', to: { name: 'pass' } },
     { label: 'Letopisy', to: { name: 'stats' } },
+    { label: 'Klenotnica', to: { name: 'treasury' } },
   ]
 
   const roll = () => {
@@ -102,7 +103,7 @@ export function Home() {
         </motion.button>
       </motion.div>
 
-      <motion.nav custom={5} variants={rise} initial="hidden" animate="show" className="font-caps relative mx-[30px] mt-[18px] flex justify-between text-base text-ink">
+      <motion.nav custom={5} variants={rise} initial="hidden" animate="show" className="font-caps relative mx-[38px] mt-[14px] grid grid-cols-2 text-base text-ink">
         {links.map((l) => (
           <motion.button
             key={l.label}

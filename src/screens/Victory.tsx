@@ -7,7 +7,9 @@ import { ACHIEVEMENT_MAP, cosmetics, KIND_LABEL, levelFromXp, levelProgress, REW
 import { playEffect, wasEffectPlayed } from '../lib/effects'
 import { sfx } from '../lib/sound'
 import { THEMES } from '../lib/themes'
-import type { GameResult, PlayerResult, Profile } from '../lib/types'
+import type { ChestResult, GameResult, PlayerResult, Profile } from '../lib/types'
+import { CHESTS, DIE_MAP, RARITIES } from '../lib/dice'
+import { Die3D } from '../components/Die3D'
 import { Avatar, Btn, PlayerName } from '../components/ui'
 
 export function Victory() {
@@ -267,7 +269,105 @@ function RewardCard({ result, profile, delay }: { result: PlayerResult; profile:
           </motion.div>
         )}
       </AnimatePresence>
+      {done && result.chest && <ChestOpen chest={result.chest} />}
     </motion.div>
+  )
+}
+
+const CHEST_LOOK: Record<ChestResult['tier'], { body: string; lid: string; strap: string; border: string }> = {
+  wood: { body: 'linear-gradient(180deg,#9a6534,#6b4220)', lid: 'linear-gradient(180deg,#b07440,#7d4e26)', strap: '#3b2a1a', border: '#4a2c12' },
+  iron: { body: 'linear-gradient(180deg,#9aa0a8,#5b6068)', lid: 'linear-gradient(180deg,#b4bac2,#6e747c)', strap: '#33363b', border: '#2a2c30' },
+  gold: { body: 'linear-gradient(180deg,#f5c842,#b07d0a)', lid: 'linear-gradient(180deg,#ffe27a,#d29a12)', strap: '#7a1a10', border: '#7a5200' },
+}
+
+/** Truhlica po hre: ťuknutím sa zatrasie, otvorí a vyletí z nej kocka do Klenotnice. */
+function ChestOpen({ chest }: { chest: ChestResult }) {
+  const [phase, setPhase] = useState<'closed' | 'shaking' | 'open'>('closed')
+  const die = DIE_MAP[chest.dieId]
+  const rarity = RARITIES[die.rarity]
+  const look = CHEST_LOOK[chest.tier]
+  const shake = useAnimationControls()
+
+  const open = async () => {
+    if (phase !== 'closed') return
+    setPhase('shaking')
+    sfx.dice()
+    await shake.start({ rotate: [0, -7, 7, -9, 9, -5, 4, 0], y: [0, -2, 0, -3, 0, -1, 0], transition: { duration: 0.75 } })
+    setPhase('open')
+    sfx.seal()
+    if (die.rarity === 'common') sfx.add(300)
+    else if (die.rarity === 'rare') sfx.add(1000)
+    else sfx.levelUp()
+  }
+
+  return (
+    <div className="relative mt-4 border-t border-rule pt-3">
+      <div className="font-caps text-sm text-accent">{CHESTS[chest.tier].name}</div>
+      <div className="mt-6 flex items-center gap-4">
+        <motion.button
+          animate={shake}
+          onClick={open}
+          whileTap={phase === 'closed' ? { scale: 0.93 } : undefined}
+          className="relative h-[86px] w-[92px] shrink-0"
+          aria-label="Otvoriť truhlicu"
+        >
+          {/* svetlo z truhlice */}
+          {phase === 'open' && (
+            <motion.div
+              className="absolute left-1/2 top-6 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full"
+              style={{ background: `radial-gradient(circle, ${die.glow ?? rarity.color}, transparent 65%)` }}
+              initial={{ opacity: 0, scale: 0.3 }}
+              animate={{ opacity: [0, 0.9, 0.55], scale: [0.3, 1.3, 1.1] }}
+              transition={{ duration: 0.9 }}
+            />
+          )}
+          {/* kocka vyletí z truhlice */}
+          {phase === 'open' && (
+            <motion.div
+              className="absolute left-1/2 top-2 z-10 -translate-x-1/2"
+              initial={{ y: 40, scale: 0.2, opacity: 0 }}
+              animate={{ y: -30, scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.1 }}
+            >
+              <Die3D die={die} size={38} idle speed={2} />
+            </motion.div>
+          )}
+          {/* telo */}
+          <div className="absolute inset-x-1 bottom-0 h-[46px]" style={{ background: look.body, border: `2px solid ${look.border}`, borderRadius: 4 }}>
+            <div className="absolute inset-y-0 left-3 w-2" style={{ background: look.strap }} />
+            <div className="absolute inset-y-0 right-3 w-2" style={{ background: look.strap }} />
+          </div>
+          {/* veko */}
+          <motion.div
+            className="absolute inset-x-0 bottom-[42px] h-[26px]"
+            style={{ background: look.lid, border: `2px solid ${look.border}`, borderRadius: '14px 14px 3px 3px', transformOrigin: '8% 100%' }}
+            animate={phase === 'open' ? { rotate: -38, y: -6, x: -6 } : { rotate: 0, y: 0, x: 0 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+          >
+            <div className="absolute inset-y-0 left-3 w-2" style={{ background: look.strap }} />
+            <div className="absolute inset-y-0 right-3 w-2" style={{ background: look.strap }} />
+          </motion.div>
+          {/* zámok */}
+          <div className="absolute bottom-[30px] left-1/2 h-4 w-3.5 -translate-x-1/2 rounded-sm" style={{ background: '#e9c66a', border: `1px solid ${look.border}` }} />
+        </motion.button>
+
+        <div className="min-w-0 flex-1 text-left">
+          {phase !== 'open' ? (
+            <div className="italic text-muted">{phase === 'closed' ? 'Ťukni na truhlicu a otvor ju…' : 'Niečo v nej hrká…'}</div>
+          ) : (
+            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>
+              <div className="font-caps text-xs" style={{ color: rarity.color }}>
+                {rarity.name} kocka
+              </div>
+              <div className="text-lg leading-tight">{die.name}</div>
+              <div className="mt-1 text-xs text-muted">
+                {chest.isNew ? '✦ Nová do Klenotnice!' : `Duplikát → +${RARITIES[die.rarity].coins} 🪙`} · truhlica +{CHESTS[chest.tier].coins} 🪙
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 

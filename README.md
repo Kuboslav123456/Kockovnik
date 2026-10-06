@@ -60,6 +60,20 @@ Hrá sa na jednom mobile, takže väčšina odmien sa ukazuje **počas ťahu hr�
 
 XP: účasť +20, výhra +100, najvyšší ťah hry +15, comeback +30, každý nový odznak +25.
 
+## Klenotnica – vzácne kocky
+
+Po každej dohratej hre otvorí každý hráč truhlicu s náhodnou kockou (24 kociek v 5 stupňoch vzácnosti, `src/lib/dice.ts`).
+
+| Truhlica | Kedy | Bežná | Vzácna | Epická | Legendárna | Mýtická |
+|---|---|---|---|---|---|---|
+| Drevená | účasť | 60 % | 25 % | 11 % | 3,5 % | 0,5 % |
+| Železná | výhra | 45 % | 32 % | 17 % | 5 % | 1 % |
+| Zlatá | ťah 1 000+, comeback alebo nový odznak | 25 % | 35 % | 27 % | 10 % | 3 % |
+
+- Každá truhlica dá aj pár mincí (2 / 5 / 10). Duplikát sa premení na mince podľa vzácnosti (5 / 15 / 40 / 100 / 250).
+- Za mince sa dá vykovať chýbajúca kocka (30 / 90 / 240 / 600 / 1 500).
+- Obľúbená kocka sa točí vedľa zapisovanej hodnoty počas ťahu hráča.
+
 ## Štruktúra
 
 - `src/lib/game.ts`: odvodenie stavu hry z poľa ťahov (súčty, hráč na ťahu, posledné kolo, víťaz). Undo = odobratie posledného ťahu.

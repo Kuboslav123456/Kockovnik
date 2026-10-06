@@ -13,6 +13,7 @@ import { Profiles } from './screens/Profiles'
 import { ProfileScreen } from './screens/ProfileScreen'
 import { Pass } from './screens/Pass'
 import { Stats } from './screens/Stats'
+import { Treasury } from './screens/Treasury'
 
 export default function App() {
   const initial: Route = getState().activeGame ? { name: 'game' } : { name: 'home' }
@@ -89,6 +90,8 @@ function RouteView({ route }: { route: Route }) {
       return <Profiles />
     case 'profile':
       return <ProfileScreen id={route.id} />
+    case 'treasury':
+      return <Treasury initialId={route.id} />
     case 'pass':
       return <Pass initialId={route.id} />
     case 'stats':

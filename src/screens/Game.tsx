@@ -11,6 +11,8 @@ import type { ActiveGame, BurstId, KeypadId, Profile } from '../lib/types'
 import { AnimatedNumber, Btn, HistoricHome } from '../components/ui'
 import { Sheet } from '../components/Sheet'
 import { Burst } from '../components/Burst'
+import { Die3D } from '../components/Die3D'
+import { DIE_MAP } from '../lib/dice'
 
 const QUICK = [50, 100, 500, 1000]
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫']
@@ -18,7 +20,7 @@ const ROMAN_KEYS: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III' }
 
 const UNKNOWN: Omit<Profile, 'id'> = {
   name: '?', avatar: '❔', xp: 0, achievements: [], themeId: 'manuscript', titleId: null, effectId: 'confetti',
-  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'medieval', createdAt: 0,
+  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'medieval', dice: {}, coins: 0, favoriteDie: null, createdAt: 0,
 }
 
 /** Rozdelí meno na iniciálu a zvyšok (správne aj pre znaky mimo BMP). */
@@ -80,6 +82,33 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const value = Number(input || 0)
+  const favDie = current.favoriteDie ? DIE_MAP[current.favoriteDie] : null
+
+  // počas hry nenechať obrazovku zhasnúť (inak sa uspí aj zvuk)
+  useEffect(() => {
+    type WakeLockApi = { request: (t: 'screen') => Promise<{ release: () => Promise<void> }> }
+    const wl = (navigator as unknown as { wakeLock?: WakeLockApi }).wakeLock
+    if (!wl) return
+    let lock: { release: () => Promise<void> } | null = null
+    let alive = true
+    const acquire = () => {
+      if (document.visibilityState !== 'visible') return
+      wl.request('screen')
+        .then((l) => {
+          if (alive) lock = l
+          else void l.release()
+        })
+        .catch(() => {})
+    }
+    acquire()
+    // zámok sa pri prepnutí appky stratí – po návrate ho vezmeme znova
+    document.addEventListener('visibilitychange', acquire)
+    return () => {
+      alive = false
+      document.removeEventListener('visibilitychange', acquire)
+      void lock?.release().catch(() => {})
+    }
+  }, [])
 
   // Aktuálny hráč vždy na očiach
   useEffect(() => {
@@ -324,14 +353,22 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
           >
             {quote(current)}
           </motion.div>
-          <motion.div
-            key={value}
-            initial={{ scale: 1.08 }}
-            animate={{ scale: 1 }}
-            className={`num-weight tabular mt-0.5 inline-block text-[56px] leading-none ${value ? 'text-accent' : 'text-faint'} ${FONTS[cur.fontId].className}`}
-          >
-            {value ? `+${fmt(value)}` : '0'}
-          </motion.div>
+          <div className="mt-0.5 flex items-center justify-center gap-3">
+            {/* obľúbená kocka hráča na ťahu z Klenotnice */}
+            {favDie && (
+              <motion.div key={current.id} initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}>
+                <Die3D die={favDie} size={34} idle />
+              </motion.div>
+            )}
+            <motion.div
+              key={value}
+              initial={{ scale: 1.08 }}
+              animate={{ scale: 1 }}
+              className={`num-weight tabular inline-block text-[56px] leading-none ${value ? 'text-accent' : 'text-faint'} ${FONTS[cur.fontId].className}`}
+            >
+              {value ? `+${fmt(value)}` : '0'}
+            </motion.div>
+          </div>
           <div className="h-4 text-xs text-accent">
             <AnimatePresence>
               {error && (

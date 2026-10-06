@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import type { ActiveGame, AppState, FinishedGame, GameResult, GameRules, PlayerResult, Profile, Settings, XpLine } from './types'
 import { deriveGame, wasLastAtSomePoint } from './game'
 import { ACHIEVEMENTS, ACHIEVEMENT_MAP, ACHIEVEMENT_XP, levelFromXp, REWARDS } from './progression'
+import { CHESTS, chestTier, DIE_MAP, RARITIES, rollDie } from './dice'
 
 const KEY = 'kockovnik:v1'
 
@@ -14,7 +15,10 @@ const initial: AppState = {
   lastResult: null,
 }
 
-const PROFILE_DEFAULTS: Pick<Profile, 'keypadId' | 'burstId' | 'fontId' | 'soundId'> = {
+const PROFILE_DEFAULTS: Pick<Profile, 'keypadId' | 'burstId' | 'fontId' | 'soundId' | 'dice' | 'coins' | 'favoriteDie'> = {
+  dice: {},
+  coins: 0,
+  favoriteDie: null,
   keypadId: 'classic',
   burstId: 'float',
   fontId: 'classic',
@@ -92,6 +96,9 @@ export function createProfile(name: string, avatar: string, gender: Profile['gen
     burstId: 'float',
     fontId: 'classic',
     soundId: 'medieval',
+    dice: {},
+    coins: 0,
+    favoriteDie: null,
     createdAt: Date.now(),
   }
   setState((s) => ({ ...s, profiles: [...s.profiles, p] }))
@@ -167,7 +174,18 @@ export function finishGame(): GameResult | null {
     newAchievements.forEach((id) => lines.push({ label: `${ACHIEVEMENT_MAP[id].icon} ${ACHIEVEMENT_MAP[id].name}`, xp: ACHIEVEMENT_XP }))
 
     const gained = lines.reduce((a, l) => a + l.xp, 0)
-    return { playerId: pid, xpBefore: profile.xp, xpAfter: profile.xp + gained, lines, newAchievements }
+
+    // truhlica: zlatá za výkon (1 000+ v ťahu, comeback, nový odznak), železná za výhru, inak drevená
+    const feat =
+      g.turns.some((t) => t.playerId === pid && t.points >= 1000) ||
+      lines.some((l) => l.label === 'Comeback') ||
+      newAchievements.length > 0
+    const tier = chestTier(pid === d.winnerId, feat)
+    const die = rollDie(tier)
+    const isNew = !(profile.dice?.[die.id] > 0)
+    const chest = { tier, dieId: die.id, isNew, coins: CHESTS[tier].coins + (isNew ? 0 : RARITIES[die.rarity].coins) }
+
+    return { playerId: pid, xpBefore: profile.xp, xpAfter: profile.xp + gained, lines, newAchievements, chest }
   })
 
   const result: GameResult = { game: finished, players }
@@ -178,7 +196,23 @@ export function finishGame(): GameResult | null {
     lastResult: result,
     profiles: st.profiles.map((p) => {
       const r = players.find((x) => x.playerId === p.id)
-      return r ? { ...p, ...autoEquip(p, r.xpAfter), xp: r.xpAfter, achievements: [...p.achievements, ...r.newAchievements] } : p
+      if (!r) return p
+      const dice = { ...p.dice }
+      let favoriteDie = p.favoriteDie
+      if (r.chest) {
+        dice[r.chest.dieId] = (dice[r.chest.dieId] ?? 0) + 1
+        // prvá kocka v zbierke sa hneď stane obľúbenou
+        if (!favoriteDie) favoriteDie = r.chest.dieId
+      }
+      return {
+        ...p,
+        ...autoEquip(p, r.xpAfter),
+        xp: r.xpAfter,
+        achievements: [...p.achievements, ...r.newAchievements],
+        dice,
+        coins: p.coins + (r.chest?.coins ?? 0),
+        favoriteDie,
+      }
     }),
   }))
   return result
@@ -200,4 +234,15 @@ function autoEquip(p: Profile, xpAfter: number): Partial<Profile> {
     if (r.kind === 'dice') patch.diceBackground = true
   })
   return patch
+}
+
+/** Vykovanie chýbajúcej kocky za mince */
+export function forgeDie(profileId: string, dieId: string): boolean {
+  const die = DIE_MAP[dieId]
+  const p = state.profiles.find((x) => x.id === profileId)
+  if (!die || !p) return false
+  const cost = RARITIES[die.rarity].forge
+  if (p.coins < cost || (p.dice[dieId] ?? 0) > 0) return false
+  updateProfile(profileId, { coins: p.coins - cost, dice: { ...p.dice, [dieId]: 1 }, favoriteDie: p.favoriteDie ?? dieId })
+  return true
 }
