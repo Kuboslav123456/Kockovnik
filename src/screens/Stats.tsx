@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useApp } from '../lib/store'
+import { deleteGame, useApp } from '../lib/store'
 import { deriveGame, fmt, headToHead, playerStats } from '../lib/game'
 import { Avatar, Header, PlayerName, Screen, Section, listItem } from '../components/ui'
 
@@ -10,7 +10,10 @@ export function Stats() {
     .sort((a, b) => b.s.wins - a.s.wins || b.s.winRate - a.s.winRate)
 
   const allTurns = app.history.flatMap((g) => g.turns)
-  const record = allTurns.reduce((a, t) => (t.points > a.points ? t : a), { playerId: '', points: 0 })
+  // rekord len medzi hráčmi, ktorí ešte existujú – zmazané profily sa nerátajú
+  const record = allTurns
+    .filter((t) => app.profiles.some((p) => p.id === t.playerId))
+    .reduce((a, t) => (t.points > a.points ? t : a), { playerId: '', points: 0 })
   const recordHolder = app.profiles.find((p) => p.id === record.playerId)
   const h2hPlayers = players.filter((x) => x.s.games > 0).map((x) => x.p)
 
@@ -116,7 +119,18 @@ export function Stats() {
                 <div key={g.id} className="themed glass rounded-2xl px-4 py-3">
                   <div className="flex items-center justify-between text-xs text-muted">
                     <span>{new Date(g.finishedAt).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                    <span>do {fmt(g.target)}</span>
+                    <span className="flex items-center gap-3">
+                      do {fmt(g.target)}
+                      <button
+                        className="-m-2 p-2 text-base leading-none text-faint"
+                        aria-label="Zmazať hru z letopisov"
+                        onClick={() => {
+                          if (confirm('Zmazať túto hru z letopisov? Body a rekordy z nej sa prestanú rátať.')) deleteGame(g.id)
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </span>
                   </div>
                   <div className="mt-1 font-semibold">🏆 {w?.name ?? 'zmazaný hráč'}</div>
                   <div className="mt-1 flex flex-wrap gap-x-3 text-sm text-muted">

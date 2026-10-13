@@ -26,6 +26,12 @@ const PROFILE_DEFAULTS: Pick<Profile, 'keypadId' | 'burstId' | 'fontId' | 'sound
   soundId: 'medieval',
 }
 
+/** Hry, v ktorých už nehral nikto z existujúcich hráčov (napr. testovací profil), sa zahodia. */
+function withoutOrphans(history: AppState['history'], profiles: { id: string }[]) {
+  const alive = new Set(profiles.map((p) => p.id))
+  return history.filter((g) => g.playerIds.some((id) => alive.has(id)))
+}
+
 function load(): AppState {
   try {
     const raw = localStorage.getItem(KEY)
@@ -43,7 +49,8 @@ function load(): AppState {
     if ((parsed.version ?? 1) < 3) {
       profiles = profiles.map((p) => (p.soundId === 'classic' ? { ...p, soundId: 'medieval' as const } : p))
     }
-    return { ...initial, ...parsed, version: 3, profiles, settings }
+    const history = withoutOrphans(parsed.history ?? [], profiles)
+    return { ...initial, ...parsed, version: 3, profiles, settings, history }
   } catch {
     return initial
   }
@@ -112,7 +119,14 @@ export function updateProfile(id: string, patch: Partial<Profile>) {
 }
 
 export function deleteProfile(id: string) {
-  setState((s) => ({ ...s, profiles: s.profiles.filter((p) => p.id !== id) }))
+  setState((s) => {
+    const profiles = s.profiles.filter((p) => p.id !== id)
+    return { ...s, profiles, history: withoutOrphans(s.history, profiles) }
+  })
+}
+
+export function deleteGame(id: string) {
+  setState((s) => ({ ...s, history: s.history.filter((g) => g.id !== id) }))
 }
 
 export function updateSettings(patch: Partial<Settings>) {
