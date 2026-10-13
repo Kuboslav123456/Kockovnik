@@ -369,6 +369,15 @@ export const sfx = {
     }
     haptic([10, 30, 10, 30, 10])
   },
+  /** výbuch kocky – hlboké dunenie, prask a doznievajúce praskanie úlomkov */
+  boom(at = 0) {
+    tone(110, at, 0.9, 'sine', 0.5, 28)
+    tone(60, at, 1.2, 'triangle', 0.3, 22)
+    noise(at, 0.5, 0.45, 1800, 120, 0.7)
+    noise(at, 0.08, 0.35, 5000, undefined, 0.6)
+    for (let i = 0; i < 9; i++) wood(at + 0.12 + i * 0.05 + Math.random() * 0.06, 0.09 * (1 - i / 11), 0.6 + Math.random() * 0.9)
+    setTimeout(() => haptic([80, 40, 160]), at * 1000)
+  },
   /** buchnutie voskovej pečate */
   seal() {
     drum(0, 0.32)
