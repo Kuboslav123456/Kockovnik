@@ -378,6 +378,13 @@ export const sfx = {
     for (let i = 0; i < 9; i++) wood(at + 0.12 + i * 0.05 + Math.random() * 0.06, 0.09 * (1 - i / 11), 0.6 + Math.random() * 0.9)
     setTimeout(() => haptic([80, 40, 160]), at * 1000)
   },
+  /** víťazná kocka dopadne – úder bubna a zvony v D dur */
+  triumph() {
+    drum(0, 0.4)
+    wood(0.01, 0.12, 0.7)
+    ;[N.D5, N.Fs5, N.A5, N.D6].forEach((f, i) => bell(f, 0.08 + i * 0.09, 0.09, 2.8))
+    haptic([50, 40, 120])
+  },
   /** buchnutie voskovej pečate */
   seal() {
     drum(0, 0.32)

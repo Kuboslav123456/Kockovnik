@@ -15,6 +15,7 @@ import { Die3D } from '../components/Die3D'
 import { DIE_MAP, type DieDef } from '../lib/dice'
 import { DieFly } from '../components/DieFly'
 import { DiceRoller } from '../components/DiceRoller'
+import { commentary } from '../lib/commentator'
 
 const QUICK = [50, 100, 500, 1000]
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫']
@@ -88,6 +89,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
 
   const value = Number(input || 0)
   const favDie = current.favoriteDie ? DIE_MAP[current.favoriteDie] : null
+  const comment = commentary(game, byId)
 
   // počas hry nenechať obrazovku zhasnúť (inak sa uspí aj zvuk)
   useEffect(() => {
@@ -369,6 +371,20 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
       {/* zadávanie má prirodzenú výšku a nezmenšuje sa – pri malom displeji sa posúva zoznam hráčov */}
       <motion.div animate={shake} className="flex shrink-0 grow basis-auto flex-col">
         <div className="mx-[22px] mt-3 text-center">
+          {/* komentátor: hláška k poslednému ťahu */}
+          <div className="flex min-h-[38px] items-end justify-center">
+            {comment && (
+              <motion.div
+                key={game.turns.length}
+                initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 24, delay: 0.15 }}
+                className="font-caps line-clamp-2 text-[15px] leading-tight text-accent"
+              >
+                {comment}
+              </motion.div>
+            )}
+          </div>
           <motion.div
             key={current.id}
             initial={game.turns.length ? { opacity: 0, y: 6 } : false}

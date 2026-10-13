@@ -10,6 +10,7 @@ import { THEMES } from '../lib/themes'
 import type { ChestResult, GameResult, PlayerResult, Profile } from '../lib/types'
 import { CHESTS, DICE_SETS, DIE_MAP, RARITIES } from '../lib/dice'
 import { Die3D } from '../components/Die3D'
+import { WinnerDie } from '../components/WinnerDie'
 import { Avatar, Btn, PlayerName } from '../components/ui'
 
 export function Victory() {
@@ -34,6 +35,11 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
   const byId = (id: string) => profiles.find((p) => p.id === id)
   const winner = byId(game.winnerId)
   const played = useRef(false)
+  // víťazná kocka: najprv veľký príchod cez celú obrazovku, potom krúži okolo víťaza
+  const winDie = winner ? DIE_MAP[winner.favoriteDie ?? ''] ?? DIE_MAP.bone : null
+  const [dieIntro, setDieIntro] = useState(true)
+  const avatarRef = useRef<HTMLDivElement | null>(null)
+  const ORBIT = 92
 
   useEffect(() => {
     if (played.current || !winner) return
@@ -58,6 +64,16 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
 
   return (
     <div className="safe-top safe-bottom mx-auto flex min-h-full w-full max-w-md flex-col px-4">
+      {winDie && dieIntro && phase === 'celebrate' && (
+        <WinnerDie
+          die={winDie}
+          target={() => {
+            const r = avatarRef.current?.getBoundingClientRect()
+            return r ? { x: r.left + r.width / 2 + ORBIT, y: r.top + r.height / 2 } : null
+          }}
+          onDone={() => setDieIntro(false)}
+        />
+      )}
       {phase === 'celebrate' ? (
           <motion.div key="c" className="flex flex-1 flex-col">
             <div className="relative mt-6 flex flex-col items-center text-center">
@@ -67,13 +83,25 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
                 animate={{ rotate: 360 }}
                 transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
               />
-              <motion.div initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.15 }} className="relative mt-10">
+              <motion.div ref={avatarRef} initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.15 }} className="relative mt-10">
                 {winner && <Avatar profile={winner} size={120} glow />}
+                {winDie && !dieIntro && (
+                  <motion.div
+                    className="absolute left-1/2 top-1/2 h-0 w-0"
+                    initial={{ rotate: 0 }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <div className="absolute" style={{ left: ORBIT - 17, top: -17 }}>
+                      <Die3D die={winDie} size={34} idle />
+                    </div>
+                  </motion.div>
+                )}
                 <motion.div className="absolute -right-4 -top-6 text-5xl" initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6, type: 'spring' }}>
                   👑
                 </motion.div>
               </motion.div>
-              <motion.h1 className="font-display text-glow relative mt-6 text-[40px] leading-tight" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
+              <motion.h1 className={`font-display text-glow relative text-[40px] leading-tight ${winDie ? 'mt-14' : 'mt-6'}`} initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.45 }}>
                 {winner?.name ?? '?'} vyhráva!
               </motion.h1>
               <motion.div className="tabular relative mt-1 text-lg text-muted" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
