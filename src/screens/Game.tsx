@@ -399,31 +399,32 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
           initial={game.turns.length ? { opacity: 0.4, rotateX: -30, y: 10 } : false}
           animate={{ opacity: 1, rotateX: 0, y: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-          style={{ transformPerspective: 700, paddingBottom: 'calc(max(env(safe-area-inset-bottom), 0px) + 18px)' }}
-          className="mt-auto px-4 pt-2"
+          style={{ transformPerspective: 700, paddingBottom: 'calc(max(env(safe-area-inset-bottom), 0px) + 10px)' }}
+          className="mt-auto flex grow flex-col justify-end px-4 pt-2"
         >
-          <div className="grid grid-cols-4 gap-1.5">
+          {/* najpoužívanejšie riadky (+50… a zápis) sa natiahnu do voľného miesta, čísla ostanú rovnaké */}
+          <div className="grid max-h-20 min-h-14 grow basis-14 grid-cols-4 gap-1.5">
             {QUICK.map((q) => (
-              <Key key={q} skin={cur.keypadId} className="key-quick tabular min-h-12 whitespace-nowrap px-1 text-[22px] font-semibold leading-none" onClick={() => quick(q)}>
+              <Key key={q} skin={cur.keypadId} className="key-quick tabular whitespace-nowrap px-1 text-[24px] font-semibold leading-none" onClick={() => quick(q)}>
                 +{q}
               </Key>
             ))}
           </div>
-          <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+          <div className="mt-1.5 grid max-h-[242px] min-h-[210px] grow-[2] basis-[210px] grid-cols-3 gap-1.5">
             {KEYS.map((k) => (
               <Key key={k} skin={cur.keypadId} className="min-h-12 text-2xl font-semibold" onClick={() => press(k)} aria-label={k === '⌫' ? 'Zmazať' : k}>
                 {romanKeys && ROMAN_KEYS[k] ? ROMAN_KEYS[k] : k}
               </Key>
             ))}
           </div>
-          <div className="mt-2 grid grid-cols-[1fr_1fr_1.7fr] gap-1.5">
-            <Key skin={cur.keypadId} className="key-action min-h-11 whitespace-nowrap px-1 text-[15px]" disabled={!game.turns.length} onClick={undo}>
+          <div className="mt-3.5 grid max-h-20 min-h-14 grow basis-14 grid-cols-[1fr_1fr_1.7fr] gap-1.5">
+            <Key skin={cur.keypadId} className="key-action whitespace-nowrap px-1 text-[16px]" disabled={!game.turns.length} onClick={undo}>
               Späť
             </Key>
-            <Key skin={cur.keypadId} className="key-action min-h-11 whitespace-nowrap px-1 text-[15px]" onClick={() => commit(0)}>
+            <Key skin={cur.keypadId} className="key-action whitespace-nowrap px-1 text-[16px]" onClick={() => commit(0)}>
               Prepadol
             </Key>
-            <Key skin={cur.keypadId} primary className="key-action min-h-11 whitespace-nowrap px-1 text-[15px] font-semibold" disabled={!value} onClick={() => commit(value)}>
+            <Key skin={cur.keypadId} primary className="key-action whitespace-nowrap px-1 text-[17px] font-semibold" disabled={!value} onClick={() => commit(value)}>
               Zapísať do kroniky
             </Key>
           </div>
