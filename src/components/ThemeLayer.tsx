@@ -12,12 +12,19 @@ export function ThemeLayer({ themeId, dice }: { themeId: ThemeId; dice?: boolean
     Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v))
     root.dataset.style = theme.style
     root.style.colorScheme = theme.scheme
+    // farba aj pod stavovým riadkom a lištou iPhonu, keby ich pozadie neprekrylo
+    root.style.background = theme.base
     document.body.style.background = theme.base
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.base)
   }, [theme])
 
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    // iPhone (najmä appka z plochy) obmedzí `fixed inset-0` na bezpečnú zónu – pozadie preto
+    // natiahneme aj pod stavový riadok a spodnú lištu, aby išlo cez celý displej
+    <div
+      className="pointer-events-none fixed inset-x-0 -z-10 overflow-hidden"
+      style={{ top: 'calc(-1 * env(safe-area-inset-top))', bottom: 'calc(-1 * env(safe-area-inset-bottom))' }}
+    >
       <AnimatePresence initial={false}>
         <motion.div
           key={theme.id}
