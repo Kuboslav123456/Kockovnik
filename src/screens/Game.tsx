@@ -359,7 +359,10 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
             {/* obľúbená kocka hráča na ťahu z Klenotnice */}
             {favDie && (
               <motion.div key={current.id} initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}>
-                <Die3D die={favDie} size={34} idle />
+                {/* jemne levituje nad stolom */}
+                <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }} className="grid h-[84px] w-[84px] place-items-center">
+                  <Die3D die={favDie} size={52} idle />
+                </motion.div>
               </motion.div>
             )}
             <motion.div
@@ -399,7 +402,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
           initial={game.turns.length ? { opacity: 0.4, rotateX: -30, y: 10 } : false}
           animate={{ opacity: 1, rotateX: 0, y: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-          style={{ transformPerspective: 700, paddingBottom: 'calc(max(env(safe-area-inset-bottom), 0px) + 10px)' }}
+          style={{ transformPerspective: 700, paddingBottom: 'calc(max(env(safe-area-inset-bottom) - 16px, 0px) + 6px)' }}
           className="mt-auto flex grow flex-col justify-end px-4 pt-2"
         >
           {/* najpoužívanejšie riadky (+50… a zápis) sa natiahnu do voľného miesta, čísla ostanú rovnaké */}
