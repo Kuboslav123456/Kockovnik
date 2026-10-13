@@ -12,7 +12,8 @@ import { AnimatedNumber, Btn, HistoricHome } from '../components/ui'
 import { Sheet } from '../components/Sheet'
 import { Burst } from '../components/Burst'
 import { Die3D } from '../components/Die3D'
-import { DIE_MAP } from '../lib/dice'
+import { DIE_MAP, type DieDef } from '../lib/dice'
+import { DieFly } from '../components/DieFly'
 import { DiceRoller } from '../components/DiceRoller'
 
 const QUICK = [50, 100, 500, 1000]
@@ -79,6 +80,8 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
   const [showHistory, setShowHistory] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [showRoller, setShowRoller] = useState(false)
+  const [dieFly, setDieFly] = useState<{ die: DieDef; from: { x: number; y: number }; key: number } | null>(null)
+  const dieRef = useRef<HTMLDivElement | null>(null)
   const shake = useAnimationControls()
   const screen = useAnimationControls()
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -166,6 +169,13 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
         void screen.start({ x: [0, -9, 9, -6, 6, -2, 0], y: [0, 4, -4, 2, 0], transition: { duration: 0.45 } })
       }
       setFlash({ playerId: d.currentPlayerId, points, key: Date.now(), burst: cur.burstId })
+      // 1 000+: obľúbená kocka sa prekotúľa cez displej a vyletí z neho
+      if (points >= 1000) {
+        const r = dieRef.current?.getBoundingClientRect()
+        const from = r ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : { x: window.innerWidth / 2, y: window.innerHeight * 0.45 }
+        setDieFly({ die: favDie ?? DIE_MAP.bone, from, key: Date.now() })
+        sfx.dice()
+      }
     }
     addTurn(points)
     setInput('')
@@ -189,6 +199,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
 
   return (
     <motion.div animate={screen} className="mx-auto flex h-[100dvh] w-full max-w-md flex-col">
+      {dieFly && <DieFly key={dieFly.key} die={dieFly.die} from={dieFly.from} onDone={() => setDieFly(null)} />}
       <AnimatePresence>
         {thunder > 0 && (
           <motion.div
@@ -360,7 +371,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
             {favDie && (
               <motion.div key={current.id} initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}>
                 {/* jemne levituje nad stolom */}
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }} className="grid h-[84px] w-[84px] place-items-center">
+                <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }} className="grid h-[84px] w-[84px] place-items-center" ref={dieRef}>
                   <Die3D die={favDie} size={52} idle />
                 </motion.div>
               </motion.div>
