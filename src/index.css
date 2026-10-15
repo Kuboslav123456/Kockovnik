@@ -193,6 +193,40 @@ input {
 .spin-slow {
   animation: spin var(--dur, 24s) linear infinite;
 }
+/* Kováreň: plamene vo výhni, stúpajúce uhlíky, pulzujúca žiara */
+@keyframes flicker {
+  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.9; }
+  25% { transform: scaleY(1.15) scaleX(0.94); opacity: 1; }
+  50% { transform: scaleY(0.92) scaleX(1.05); opacity: 0.8; }
+  75% { transform: scaleY(1.08) scaleX(0.97); opacity: 1; }
+}
+.flicker {
+  transform-origin: 50% 100%;
+  animation: flicker 0.9s ease-in-out infinite;
+}
+@keyframes ember {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(var(--dx, 10px), -170px) scale(0.3); opacity: 0; }
+}
+.ember {
+  animation: ember var(--d, 2.6s) linear var(--delay, 0s) infinite;
+}
+@keyframes heat-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.1); opacity: 1; }
+}
+.heat-pulse {
+  animation: heat-pulse 1.4s ease-in-out infinite;
+}
+@keyframes zone-pulse {
+  0%, 100% { box-shadow: 0 0 8px #ffbf3f; }
+  50% { box-shadow: 0 0 18px #ffd76a, 0 0 4px #fff; }
+}
+.zone-pulse {
+  animation: zone-pulse 0.9s ease-in-out infinite;
+}
+
 @keyframes shimmer {
   to { background-position: 200% 0; }
 }

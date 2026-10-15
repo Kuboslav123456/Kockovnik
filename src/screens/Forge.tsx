@@ -1,5 +1,5 @@
-import { motion, useAnimationFrame, useMotionValue, useTransform } from 'framer-motion'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { motion } from 'framer-motion'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useNav } from '../nav'
 import { forgeCustom, updateProfile, useApp } from '../lib/store'
 import {
@@ -8,9 +8,10 @@ import {
 } from '../lib/forge'
 import { fmt } from '../lib/game'
 import { sfx } from '../lib/sound'
-import type { CustomDie, EmblemKind, ForgeEffect, ForgeQuality, ForgeSpec, PipStyle, Profile } from '../lib/types'
+import type { CustomDie, EmblemKind, ForgeEffect, ForgeSpec, PipStyle, Profile } from '../lib/types'
 import { Avatar, Btn, Header, Screen, Section } from '../components/ui'
 import { Die3D } from '../components/Die3D'
+import { ForgeGame } from '../components/ForgeGame'
 import type { DieDef } from '../lib/dice'
 
 type Stage = 'design' | 'hammer' | 'quench' | 'done'
@@ -45,18 +46,18 @@ export function Forge({ initialId }: { initialId?: string }) {
     return (
       <Screen>
         <Header title="Kováreň" onBack={() => setStage('design')} />
-        <HammerGame
+        <ForgeGame
           die={preview}
           quenching={stage === 'quench'}
           onStrikesDone={(quality) => {
             setStage('quench')
-            sfx.hiss()
+            // kocka skočí do vedra, zasyčí a vynorí sa (≈ 2,3 s)
             setTimeout(() => {
               const die = forgeCustom(profile.id, spec, name, quality)
               setMade(die)
               setStage('done')
               if (die) sfx.levelUp()
-            }, 1700)
+            }, 2400)
           }}
         />
       </Screen>
@@ -303,190 +304,6 @@ function ForgeBar({ profile, spec, onForge }: { profile: Profile; spec: ForgeSpe
         {full ? `Kováreň je plná (${FORGE_SLOTS}/${FORGE_SLOTS})` : missing > 0 ? `Chýba ${fmt(missing)} 🪙` : '⚒ Rozžeraviť výheň a kovať'}
       </Btn>
       {full && <p className="mt-1.5 text-center text-xs text-muted">V Klenotnici niektorú vlastnú kocku rozbi a uvoľníš miesto.</p>}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------- minihra
-
-/** šírka zón a rýchlosť ručičky pre 1., 2. a 3. úder */
-const STRIKES = [
-  { sweep: 1100, good: 0.12, perfect: 0.045 },
-  { sweep: 850, good: 0.1, perfect: 0.038 },
-  { sweep: 800, good: 0.085, perfect: 0.032 },
-]
-
-const HIT_TEXT = ['Vedľa…', 'Dobrý úder!', 'Dokonalý úder!']
-
-export function scoreToQuality(total: number): ForgeQuality {
-  return total >= 5 ? 'master' : total >= 3 ? 'journeyman' : 'apprentice'
-}
-
-function HammerGame({ die, quenching, onStrikesDone }: { die: DieDef; quenching: boolean; onStrikesDone: (q: ForgeQuality) => void }) {
-  const [strike, setStrike] = useState(0)
-  const [hits, setHits] = useState<(0 | 1 | 2)[]>([])
-  const [paused, setPaused] = useState(false)
-  const zone = useMemo(() => 0.2 + Math.random() * 0.6, [strike]) // eslint-disable-line react-hooks/exhaustive-deps
-  const pos = useMotionValue(0)
-  const t = useRef(0)
-  const left = useTransform(pos, (v) => `${v * 100}%`)
-  const cfg = STRIKES[Math.min(strike, STRIKES.length - 1)]
-  const done = hits.length >= STRIKES.length
-
-  // ručička behá tam a späť; počas vyhodnotenia úderu stojí
-  useAnimationFrame((_, dt) => {
-    if (paused || done) return
-    t.current += dt
-    const c = (t.current % (cfg.sweep * 2)) / cfg.sweep
-    pos.set(c <= 1 ? c : 2 - c)
-  })
-
-  const hit = () => {
-    if (paused || done) return
-    const d = Math.abs(pos.get() - zone)
-    const h: 0 | 1 | 2 = d <= cfg.perfect ? 2 : d <= cfg.good ? 1 : 0
-    sfx.clang(h)
-    const next = [...hits, h]
-    setHits(next)
-    setPaused(true)
-    setTimeout(() => {
-      if (next.length >= STRIKES.length) {
-        onStrikesDone(scoreToQuality(next.reduce<number>((a, x) => a + x, 0)))
-        return
-      }
-      t.current = 0
-      setStrike((s) => s + 1)
-      setPaused(false)
-    }, 750)
-  }
-
-  const last = hits[hits.length - 1]
-
-  return (
-    <div className="px-4" onPointerDown={(e) => (e.target as HTMLElement).closest('button') || hit()}>
-      <div className="relative overflow-hidden rounded-3xl px-4 pb-6 pt-8" style={{ background: 'radial-gradient(90% 70% at 50% 80%, #6a2a0c 0%, #2a1208 55%, #120804 100%)' }}>
-        {/* výheň */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2" style={{ background: 'radial-gradient(50% 60% at 50% 100%, rgba(255,140,30,0.45), transparent 70%)' }} />
-
-        <div className="relative mx-auto grid h-48 w-56 place-items-center">
-          {/* kladivo */}
-          <motion.div
-            key={`h${hits.length}`}
-            className="absolute right-2 top-0 origin-bottom-right text-6xl"
-            initial={{ rotate: hits.length ? 25 : -35 }}
-            animate={{ rotate: -35 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 12 }}
-            style={{ transformOrigin: '80% 80%' }}
-          >
-            🔨
-          </motion.div>
-          {/* rozžeravená kocka – pri kalení vychladne */}
-          <motion.div
-            key={`d${hits.length}`}
-            initial={hits.length ? { scaleY: 0.82, scaleX: 1.1 } : false}
-            animate={{ scaleY: 1, scaleX: 1 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 14 }}
-            className="relative mt-6"
-          >
-            <div
-              className="absolute rounded-full transition-opacity duration-[1500ms]"
-              style={{ inset: -40, background: 'radial-gradient(circle, rgba(255,170,60,0.9), rgba(255,80,0,0.4) 45%, transparent 70%)', opacity: quenching ? 0 : 1 }}
-            />
-            <div className="transition-[filter] duration-[1500ms]" style={{ filter: quenching ? 'none' : 'sepia(1) saturate(6) hue-rotate(-18deg) brightness(1.3)' }}>
-              <Die3D die={die} size={70} />
-            </div>
-          </motion.div>
-          {/* nákova */}
-          <div
-            className="relative -mt-1 h-10 w-44"
-            style={{ background: 'linear-gradient(#5a5a62, #2a2a30)', clipPath: 'polygon(0 0, 100% 0, 88% 45%, 70% 55%, 74% 100%, 26% 100%, 30% 55%, 12% 45%)' }}
-          />
-          {/* iskry po údere */}
-          {last != null && last > 0 && <Sparks key={`s${hits.length}`} big={last === 2} />}
-          {quenching && <Steam />}
-        </div>
-
-        <div className="relative mt-4 h-6 text-center">
-          {quenching ? (
-            <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="font-caps text-lg text-[#ffe0b0]">
-              Kalenie… sssss
-            </motion.span>
-          ) : paused && last != null ? (
-            <motion.span key={hits.length} initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="font-caps text-lg" style={{ color: last === 2 ? '#ffd76a' : last === 1 ? '#ffe0b0' : '#b08a70' }}>
-              {HIT_TEXT[last]}
-            </motion.span>
-          ) : (
-            <span className="text-sm text-[#d8b898]">Udri, keď je ručička v zlatom poli</span>
-          )}
-        </div>
-
-        {/* stupnica */}
-        <div className="relative mx-1 mt-3 h-7 rounded-full" style={{ background: 'linear-gradient(90deg, #3a1a0c, #5a2a10 50%, #3a1a0c)', boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.6)' }}>
-          {!done && (
-            <>
-              <div className="absolute inset-y-0 rounded-full" style={{ left: `${(zone - cfg.good) * 100}%`, width: `${cfg.good * 200}%`, background: 'rgba(255,190,80,0.45)' }} />
-              <div className="absolute inset-y-0 rounded-full" style={{ left: `${(zone - cfg.perfect) * 100}%`, width: `${cfg.perfect * 200}%`, background: '#ffd76a', boxShadow: '0 0 12px #ffbf3f' }} />
-            </>
-          )}
-          <motion.div className="absolute -inset-y-1.5 w-1.5 -translate-x-1/2 rounded-full bg-white" style={{ left, boxShadow: '0 0 8px #fff' }} />
-        </div>
-
-        <div className="relative mt-4 flex justify-center gap-3 text-2xl">
-          {STRIKES.map((_, i) => (
-            <span key={i} style={{ color: hits[i] === 2 ? '#ffd76a' : hits[i] === 1 ? '#e8b070' : hits[i] === 0 ? '#6a4a3a' : '#4a3020' }}>
-              {hits[i] === undefined ? '○' : hits[i] === 0 ? '✕' : '★'}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <Btn variant="accent" className="mt-4 w-full py-5 text-xl" silent disabled={paused || done} onClick={hit}>
-        🔨 Udrieť
-      </Btn>
-      <p className="mt-2 text-center text-xs text-muted">Tri údery: zlaté pole = dobrý, svetlý stred = dokonalý. Ručička je zakaždým rýchlejšia.</p>
-    </div>
-  )
-}
-
-function Sparks({ big }: { big: boolean }) {
-  const sparks = useMemo(
-    () =>
-      Array.from({ length: big ? 16 : 9 }, () => {
-        const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.3
-        const r = 50 + Math.random() * (big ? 90 : 55)
-        return { x: Math.cos(a) * r, y: Math.sin(a) * r, s: 3 + Math.random() * 3 }
-      }),
-    [big],
-  )
-  return (
-    <div className="pointer-events-none absolute left-1/2 top-[58%]">
-      {sparks.map((s, i) => (
-        <motion.span
-          key={i}
-          className="absolute rounded-full"
-          style={{ width: s.s, height: s.s, background: '#fff3c4', boxShadow: '0 0 6px #ffae3f' }}
-          initial={{ x: 0, y: 0, opacity: 1 }}
-          animate={{ x: s.x, y: s.y + 30, opacity: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-        />
-      ))}
-    </div>
-  )
-}
-
-function Steam() {
-  return (
-    <div className="pointer-events-none absolute inset-x-0 top-1/3">
-      {Array.from({ length: 8 }, (_, i) => (
-        <motion.span
-          key={i}
-          className="absolute rounded-full"
-          style={{ left: `${25 + (i % 4) * 16}%`, width: 46, height: 46, background: 'radial-gradient(circle, rgba(255,255,255,0.75), transparent 70%)' }}
-          initial={{ y: 30, scale: 0.4, opacity: 0 }}
-          animate={{ y: -90 - (i % 3) * 20, scale: 1.8, opacity: [0, 0.9, 0] }}
-          transition={{ duration: 1.5, delay: i * 0.08, ease: 'easeOut' }}
-        />
-      ))}
     </div>
   )
 }

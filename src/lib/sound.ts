@@ -400,6 +400,16 @@ export const sfx = {
     drum(0, 0.18)
     haptic(hit === 2 ? [25, 30, 40] : 25)
   },
+  /** švih kladiva vzduchom */
+  swing() {
+    noise(0, 0.14, 0.1, 900, 3200, 0.9)
+  },
+  /** šplechnutie do vody pri kalení */
+  splash() {
+    noise(0, 0.3, 0.32, 1100, 260, 0.7)
+    noise(0.02, 0.12, 0.18, 4200, undefined, 1.5)
+    for (let i = 0; i < 7; i++) wood(0.08 + i * 0.06 + Math.random() * 0.05, 0.05, 2 + Math.random() * 1.2)
+  },
   /** kalenie – rozžeravená kocka zasyčí vo vode */
   hiss() {
     noise(0, 1.3, 0.28, 7000, 1800, 0.5)
