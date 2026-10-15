@@ -9,6 +9,7 @@ export type Route =
   | { name: 'profile'; id: string }
   | { name: 'pass'; id?: string }
   | { name: 'treasury'; id?: string }
+  | { name: 'forge'; id?: string }
   | { name: 'stats' }
 
 interface Nav {

@@ -11,6 +11,8 @@ import type { ChestResult, GameResult, PlayerResult, Profile } from '../lib/type
 import { CHESTS, DICE_SETS, DIE_MAP, RARITIES } from '../lib/dice'
 import { Die3D } from '../components/Die3D'
 import { WinnerDie } from '../components/WinnerDie'
+import { GameChart } from '../components/GameChart'
+import { profileDie } from '../lib/forge'
 import { Avatar, Btn, PlayerName } from '../components/ui'
 
 export function Victory() {
@@ -36,7 +38,7 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
   const winner = byId(game.winnerId)
   const played = useRef(false)
   // víťazná kocka: najprv veľký príchod cez celú obrazovku, potom krúži okolo víťaza
-  const winDie = winner ? DIE_MAP[winner.favoriteDie ?? ''] ?? DIE_MAP.bone : null
+  const winDie = winner ? (profileDie(winner) ?? DIE_MAP.bone) : null
   const [dieIntro, setDieIntro] = useState(true)
   const avatarRef = useRef<HTMLDivElement | null>(null)
   const ORBIT = 92
@@ -127,6 +129,10 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
               <Stat label="Kôl" value={String(rounds)} />
               <Stat label="Najlepší ťah" value={best.points ? `${byId(best.playerId)?.avatar ?? ''} ${fmt(best.points)}` : '–'} />
               <Stat label="Trvanie" value={`${minutes} min`} />
+            </motion.div>
+
+            <motion.div className="mt-4" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.6 }}>
+              <GameChart game={game} profiles={profiles} delay={dieIntro ? 2.9 : 0.2} />
             </motion.div>
 
             <div className="mt-auto pt-6">

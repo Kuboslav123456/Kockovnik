@@ -6,6 +6,31 @@ export type BurstId = 'float' | 'explode' | 'lightning' | 'fire'
 export type FontId = 'classic' | 'chalk' | 'led'
 export type SoundId = 'medieval' | 'classic' | 'retro' | 'casino'
 
+// ---------- Kováreň: vlastné kocky ----------
+export type PipStyle = 'dots' | 'diamonds' | 'stars' | 'roman'
+export type EmblemKind = 'none' | 'initial' | 'avatar'
+export type ForgeEffect = 'none' | 'shine' | 'pipglow' | 'glow' | 'sparkle'
+export type ForgeQuality = 'apprentice' | 'journeyman' | 'master'
+
+export interface ForgeSpec {
+  material: string
+  tint: string
+  pipColor: string
+  pipStyle: PipStyle
+  emblem: EmblemKind
+  effect: ForgeEffect
+}
+
+export interface CustomDie extends ForgeSpec {
+  /** vždy začína „c_“, aby sa nemiešalo s kockami z Klenotnice */
+  id: string
+  name: string
+  quality: ForgeQuality
+  /** iniciála alebo avatar vyrytý na jednotke v čase kovania */
+  emblemText?: string
+  createdAt: number
+}
+
 export interface Profile {
   id: string
   name: string
@@ -30,6 +55,8 @@ export interface Profile {
   favoriteDie: string | null
   /** sady kociek, za ktoré už hráč dostal odmenu */
   setsDone: string[]
+  /** vlastné kocky z kovárne */
+  custom: CustomDie[]
   createdAt: number
 }
 

@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNav } from '../nav'
-import { forgeDie, updateProfile, useApp } from '../lib/store'
+import { forgeDie, smashCustom, updateProfile, useApp } from '../lib/store'
+import { buildDie, FORGE_SLOTS, profileDie, QUALITY } from '../lib/forge'
+import type { CustomDie } from '../lib/types'
 import { DICE, DICE_SETS, DIE_MAP, RARITIES, RARITY_ORDER, setDone, type DieDef } from '../lib/dice'
 import { sfx } from '../lib/sound'
 import { fmt } from '../lib/game'
@@ -14,6 +16,7 @@ export function Treasury({ initialId }: { initialId?: string }) {
   const app = useApp()
   const [id, setId] = useState(initialId ?? [...app.profiles].sort((a, b) => b.xp - a.xp)[0]?.id)
   const [detail, setDetail] = useState<DieDef | null>(null)
+  const [customDetail, setCustomDetail] = useState<CustomDie | null>(null)
   const profile = app.profiles.find((p) => p.id === id)
 
   if (!profile) {
@@ -31,7 +34,7 @@ export function Treasury({ initialId }: { initialId?: string }) {
   }
 
   const owned = DICE.filter((d) => (profile.dice[d.id] ?? 0) > 0).length
-  const fav = profile.favoriteDie ? DIE_MAP[profile.favoriteDie] : null
+  const fav = profileDie(profile)
 
   return (
     <Screen className="safe-bottom pb-8">
@@ -76,6 +79,41 @@ export function Treasury({ initialId }: { initialId?: string }) {
           Po každej hre dostaneš truhlicu: drevenú za účasť, železnú za výhru, zlatú za ťah nad 1 000, comeback alebo nový odznak. Duplikáty
           sa menia na mince, za mince sa dá vykovať kocka, ktorá ti chýba.
         </p>
+      </Section>
+
+      <Section title="Vlastné výtvory z kovárne" className="mt-6">
+        <div className="grid grid-cols-3 gap-2">
+          {(profile.custom ?? []).map((c) => (
+            <motion.button
+              key={c.id}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => {
+                sfx.tap()
+                setCustomDetail(c)
+              }}
+              className={`themed glass relative flex flex-col items-center gap-1 px-1 pb-2 pt-3 ${profile.favoriteDie === c.id ? 'glow' : ''}`}
+            >
+              <div className="grid h-14 w-14 place-items-center">
+                <Die3D die={buildDie(c)} size={38} />
+              </div>
+              <span className="w-full truncate text-center text-[12px] leading-tight">{c.name}</span>
+              <span className="text-[10px] tracking-widest" style={{ color: '#d4a017' }}>
+                {'★'.repeat(QUALITY[c.quality].stars)}
+              </span>
+            </motion.button>
+          ))}
+          {Array.from({ length: FORGE_SLOTS - (profile.custom ?? []).length }, (_, i) => (
+            <motion.button
+              key={`empty${i}`}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => nav.go({ name: 'forge', id: profile.id })}
+              className="themed flex flex-col items-center justify-center gap-1 border border-dashed border-line px-1 py-3 text-muted"
+            >
+              <span className="text-2xl">⚒</span>
+              <span className="text-[11px] leading-tight">Voľné miesto – vykuj kocku</span>
+            </motion.button>
+          ))}
+        </div>
       </Section>
 
       <Section title="Sady" className="mt-6">
@@ -147,6 +185,10 @@ export function Treasury({ initialId }: { initialId?: string }) {
           </Section>
         )
       })}
+
+      <Sheet open={!!customDetail} onClose={() => setCustomDetail(null)} title={customDetail?.name ?? ''}>
+        {customDetail && <CustomDetail die={customDetail} profileId={profile.id} onDone={() => setCustomDetail(null)} />}
+      </Sheet>
 
       <Sheet open={!!detail} onClose={() => setDetail(null)} title={detail ? (profile.dice[detail.id] ? detail.name : 'Neznáma kocka') : ''}>
         {detail && <DieDetail die={detail} profileId={profile.id} onDone={() => setDetail(null)} />}
@@ -225,6 +267,49 @@ function DieDetail({ die, profileId, onDone }: { die: DieDef; profileId: string;
           </p>
         </>
       )}
+    </div>
+  )
+}
+
+function CustomDetail({ die, profileId, onDone }: { die: CustomDie; profileId: string; onDone: () => void }) {
+  const app = useApp()
+  const profile = app.profiles.find((p) => p.id === profileId)!
+  const isFav = profile.favoriteDie === die.id
+  const q = QUALITY[die.quality]
+  return (
+    <div className="flex flex-col items-center pb-2 text-center">
+      <div className="grid h-40 place-items-center">
+        <Die3D die={buildDie(die)} size={96} idle interactive />
+      </div>
+      <div className="text-lg tracking-widest" style={{ color: '#d4a017' }}>
+        {'★'.repeat(q.stars)}
+        <span className="opacity-30">{'★'.repeat(3 - q.stars)}</span>
+      </div>
+      <p className="mt-1 italic text-muted">{buildDie(die).desc}</p>
+      <Btn
+        variant={isFav ? 'glass' : 'accent'}
+        className="mt-4 w-full"
+        disabled={isFav}
+        onClick={() => {
+          updateProfile(profileId, { favoriteDie: die.id })
+          onDone()
+        }}
+      >
+        {isFav ? '★ Toto je tvoja obľúbená' : '★ Nastaviť ako obľúbenú'}
+      </Btn>
+      <Btn
+        variant="ghost"
+        className="mt-2 w-full text-sm"
+        onClick={() => {
+          if (confirm(`Rozbiť kocku „${die.name}“? Uvoľní sa miesto v kovárni, mince sa nevrátia.`)) {
+            sfx.zero()
+            smashCustom(profileId, die.id)
+            onDone()
+          }
+        }}
+      >
+        🔨 Rozbiť a uvoľniť miesto
+      </Btn>
     </div>
   )
 }

@@ -16,6 +16,7 @@ import { DIE_MAP, type DieDef } from '../lib/dice'
 import { DieFly } from '../components/DieFly'
 import { DiceRoller } from '../components/DiceRoller'
 import { commentary } from '../lib/commentator'
+import { profileDie } from '../lib/forge'
 
 const QUICK = [50, 100, 500, 1000]
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫']
@@ -23,7 +24,7 @@ const ROMAN_KEYS: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III' }
 
 const UNKNOWN: Omit<Profile, 'id'> = {
   name: '?', avatar: '❔', xp: 0, achievements: [], themeId: 'manuscript', titleId: null, effectId: 'confetti',
-  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'medieval', dice: {}, coins: 0, favoriteDie: null, setsDone: [], createdAt: 0,
+  diceBackground: false, keypadId: 'classic', burstId: 'float', fontId: 'classic', soundId: 'medieval', dice: {}, coins: 0, favoriteDie: null, setsDone: [], custom: [], createdAt: 0,
 }
 
 /** Rozdelí meno na iniciálu a zvyšok (správne aj pre znaky mimo BMP). */
@@ -88,7 +89,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const value = Number(input || 0)
-  const favDie = current.favoriteDie ? DIE_MAP[current.favoriteDie] : null
+  const favDie = profileDie(current)
   const comment = commentary(game, byId)
 
   // počas hry nenechať obrazovku zhasnúť (inak sa uspí aj zvuk)

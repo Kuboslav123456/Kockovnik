@@ -385,6 +385,28 @@ export const sfx = {
     ;[N.D5, N.Fs5, N.A5, N.D6].forEach((f, i) => bell(f, 0.08 + i * 0.09, 0.09, 2.8))
     haptic([50, 40, 120])
   },
+  /** úder kladiva na nákovu: 2 = dokonalý (jasné zazvonenie), 1 = dobrý, 0 = vedľa (tupý úder) */
+  clang(hit: 0 | 1 | 2 = 1) {
+    if (hit === 0) {
+      drum(0, 0.3)
+      wood(0, 0.14, 0.5)
+      haptic(30)
+      return
+    }
+    const base = hit === 2 ? 1320 : 990
+    // kovové, neharmonické alikvoty – znie ako nákova, nie ako zvonček
+    ;[1, 2.76, 5.4, 8.93].forEach((m, i) => tone(base * m * 0.5, 0, (hit === 2 ? 1.1 : 0.6) / (i + 1), 'sine', 0.14 / (i + 1)))
+    noise(0, 0.05, 0.3, 5200, undefined, 0.8)
+    drum(0, 0.18)
+    haptic(hit === 2 ? [25, 30, 40] : 25)
+  },
+  /** kalenie – rozžeravená kocka zasyčí vo vode */
+  hiss() {
+    noise(0, 1.3, 0.28, 7000, 1800, 0.5)
+    noise(0.05, 0.9, 0.12, 2500, 900, 1.2)
+    for (let i = 0; i < 6; i++) wood(0.15 + i * 0.12 + Math.random() * 0.05, 0.05, 1.6 + Math.random())
+    haptic([15, 40, 15, 40, 15])
+  },
   /** buchnutie voskovej pečate */
   seal() {
     drum(0, 0.32)

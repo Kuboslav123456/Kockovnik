@@ -1,8 +1,9 @@
 import { useSyncExternalStore } from 'react'
-import type { ActiveGame, AppState, FinishedGame, GameResult, GameRules, PlayerResult, Profile, Settings, XpLine } from './types'
+import type { ActiveGame, AppState, CustomDie, ForgeQuality, ForgeSpec, FinishedGame, GameResult, GameRules, PlayerResult, Profile, Settings, XpLine } from './types'
 import { deriveGame, wasLastAtSomePoint } from './game'
 import { ACHIEVEMENTS, ACHIEVEMENT_MAP, ACHIEVEMENT_XP, levelFromXp, REWARDS } from './progression'
 import { CHESTS, chestTier, DIE_MAP, newlyCompletedSets, RARITIES, rollDie } from './dice'
+import { emblemFor, FORGE_SLOTS, forgeCost } from './forge'
 
 const KEY = 'kockovnik:v1'
 
@@ -15,7 +16,8 @@ const initial: AppState = {
   lastResult: null,
 }
 
-const PROFILE_DEFAULTS: Pick<Profile, 'keypadId' | 'burstId' | 'fontId' | 'soundId' | 'dice' | 'coins' | 'favoriteDie' | 'setsDone'> = {
+const PROFILE_DEFAULTS: Pick<Profile, 'keypadId' | 'burstId' | 'fontId' | 'soundId' | 'dice' | 'coins' | 'favoriteDie' | 'setsDone' | 'custom'> = {
+  custom: [],
   setsDone: [],
   dice: {},
   coins: 0,
@@ -108,6 +110,7 @@ export function createProfile(name: string, avatar: string, gender: Profile['gen
     coins: 0,
     favoriteDie: null,
     setsDone: [],
+    custom: [],
     createdAt: Date.now(),
   }
   setState((s) => ({ ...s, profiles: [...s.profiles, p] }))
@@ -276,4 +279,35 @@ export function forgeDie(profileId: string, dieId: string): string[] | null {
     setsDone: [...(p.setsDone ?? []), ...completed.map((s) => s.id)],
   })
   return completed.map((s) => s.id)
+}
+
+// ---------- Kováreň ----------
+
+/** Uloží vykovanú kocku a strhne mince. Vráti novú kocku (null = nemá mince alebo miesto). */
+export function forgeCustom(profileId: string, spec: ForgeSpec, name: string, quality: ForgeQuality): CustomDie | null {
+  const p = state.profiles.find((x) => x.id === profileId)
+  if (!p) return null
+  const cost = forgeCost(spec)
+  const custom = p.custom ?? []
+  if (p.coins < cost || custom.length >= FORGE_SLOTS) return null
+  const die: CustomDie = {
+    ...spec,
+    id: 'c_' + uid(),
+    name: name.trim() || 'Bezmenná',
+    quality,
+    emblemText: emblemFor(spec.emblem, p),
+    createdAt: Date.now(),
+  }
+  updateProfile(profileId, { coins: p.coins - cost, custom: [...custom, die] })
+  return die
+}
+
+/** Rozbije vlastnú kocku (uvoľní miesto v kovárni). Bola obľúbená → obľúbená sa zruší. */
+export function smashCustom(profileId: string, dieId: string) {
+  const p = state.profiles.find((x) => x.id === profileId)
+  if (!p) return
+  updateProfile(profileId, {
+    custom: (p.custom ?? []).filter((c) => c.id !== dieId),
+    favoriteDie: p.favoriteDie === dieId ? (Object.keys(p.dice).find((id) => p.dice[id] > 0) ?? null) : p.favoriteDie,
+  })
 }

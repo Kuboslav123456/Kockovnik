@@ -20,6 +20,12 @@ export interface DieDef {
   pipGlow?: boolean
   /** po stenách prechádza lesk */
   shine?: boolean
+  /** tvar ôk (vlastné kocky z kovárne); predvolené bodky */
+  pipStyle?: import('./types').PipStyle
+  /** znak vyrytý na jednotke namiesto oka */
+  emblem?: string
+  /** okolo kocky iskrí */
+  sparkle?: boolean
 }
 
 export const RARITIES: Record<Rarity, { name: string; color: string; coins: number; forge: number }> = {

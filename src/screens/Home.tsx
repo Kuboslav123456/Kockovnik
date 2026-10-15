@@ -24,6 +24,7 @@ export function Home() {
     { label: 'Dobrodružstvo', to: { name: 'pass' } },
     { label: 'Letopisy', to: { name: 'stats' } },
     { label: 'Klenotnica', to: { name: 'treasury' } },
+    { label: 'Kováreň', to: { name: 'forge' } },
   ]
 
   const roll = () => {
@@ -112,7 +113,7 @@ export function Home() {
               sfx.tap()
               nav.go(l.to)
             }}
-            className="min-h-11 px-1"
+            className={`min-h-11 px-1 ${l.label === 'Kováreň' ? 'col-span-2' : ''}`}
           >
             ❦ {l.label}
           </motion.button>

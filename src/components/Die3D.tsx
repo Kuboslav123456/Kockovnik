@@ -153,9 +153,37 @@ function Shell({
         />
       )}
       {children}
+      {/* iskrenie z kovárne – len blikanie priehľadnosti, nič sa neprepočítava */}
+      {die.sparkle &&
+        SPARKS.map((s, i) => (
+          <span
+            key={i}
+            className="pointer-events-none absolute leading-none"
+            style={{
+              left: `${s.x}%`,
+              top: `${s.y}%`,
+              fontSize: Math.max(7, size * s.s),
+              color: '#fff3c4',
+              textShadow: '0 0 6px #ffbf3f',
+              animation: `twinkle ${s.d}s ease-in-out ${s.delay}s infinite`,
+            }}
+          >
+            ✦
+          </span>
+        ))}
     </div>
   )
 }
+
+const SPARKS = [
+  { x: -18, y: -12, s: 0.22, d: 1.6, delay: 0 },
+  { x: 98, y: 6, s: 0.16, d: 1.9, delay: 0.5 },
+  { x: 86, y: 92, s: 0.2, d: 1.4, delay: 0.9 },
+  { x: -10, y: 80, s: 0.14, d: 2.1, delay: 0.3 },
+  { x: 40, y: -26, s: 0.12, d: 1.7, delay: 1.2 },
+]
+
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI']
 
 function Cube({ die, size, style, className }: { die: DieDef; size: number; style?: CSSProperties; className?: string }) {
   return (
@@ -193,21 +221,7 @@ function Faces({ die, size }: { die: DieDef; size: number }) {
         >
           {/* lesk – statický, kocka sa točí, takže sa aj tak mení */}
           {die.shine && <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.38) 0%, transparent 42%, transparent 70%, rgba(255,255,255,0.12) 100%)' }} />}
-          {PIPS[f.n].map(([x, y], i) => (
-            <span
-              key={i}
-              className="absolute rounded-full"
-              style={{
-                left: `${x}%`,
-                top: `${y}%`,
-                width: size * 0.17,
-                height: size * 0.17,
-                transform: 'translate(-50%,-50%)',
-                background: die.pip,
-                boxShadow: die.pipGlow ? `0 0 ${size * 0.1}px ${die.pip}, inset 0 1px 2px rgba(255,255,255,0.4)` : 'inset 0 2px 3px rgba(0,0,0,0.45)',
-              }}
-            />
-          ))}
+          <FaceMarks die={die} size={size} n={f.n} />
         </div>
       ))}
     </>
@@ -223,5 +237,50 @@ export function DieSilhouette({ size = 64 }: { size?: number }) {
     >
       ?
     </div>
+  )
+}
+
+/** Oká na jednej stene: bodky, kosoštvorce, hviezdy, rímske číslo alebo erb na jednotke */
+function FaceMarks({ die, size, n }: { die: DieDef; size: number; n: number }) {
+  const glow = die.pipGlow ? `0 0 ${size * 0.1}px ${die.pip}` : undefined
+  const text = (content: string, fontSize: number, className = '') => (
+    <span
+      className={`absolute inset-0 grid place-items-center leading-none ${className}`}
+      style={{ color: die.pip, fontSize, textShadow: glow ?? '0 1px 1px rgba(0,0,0,0.35)' }}
+    >
+      {content}
+    </span>
+  )
+
+  if (n === 1 && die.emblem) return text(die.emblem, size * (Array.from(die.emblem).length > 1 || /\p{Extended_Pictographic}/u.test(die.emblem) ? 0.5 : 0.58), 'font-display')
+  if (die.pipStyle === 'roman') return text(ROMAN[n - 1], size * (n === 3 || n === 6 ? 0.3 : 0.38), 'font-display')
+
+  return (
+    <>
+      {PIPS[n].map(([x, y], i) => {
+        const pos = { left: `${x}%`, top: `${y}%` }
+        if (die.pipStyle === 'stars')
+          return (
+            <span key={i} className="absolute leading-none" style={{ ...pos, transform: 'translate(-50%,-52%)', fontSize: size * 0.24, color: die.pip, textShadow: glow }}>
+              ★
+            </span>
+          )
+        return (
+          <span
+            key={i}
+            className={`absolute ${die.pipStyle === 'diamonds' ? '' : 'rounded-full'}`}
+            style={{
+              ...pos,
+              width: size * (die.pipStyle === 'diamonds' ? 0.14 : 0.17),
+              height: size * (die.pipStyle === 'diamonds' ? 0.14 : 0.17),
+              borderRadius: die.pipStyle === 'diamonds' ? 2 : undefined,
+              transform: die.pipStyle === 'diamonds' ? 'translate(-50%,-50%) rotate(45deg)' : 'translate(-50%,-50%)',
+              background: die.pip,
+              boxShadow: die.pipGlow ? `0 0 ${size * 0.1}px ${die.pip}, inset 0 1px 2px rgba(255,255,255,0.4)` : 'inset 0 2px 3px rgba(0,0,0,0.45)',
+            }}
+          />
+        )
+      })}
+    </>
   )
 }
