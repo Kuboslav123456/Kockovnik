@@ -8,7 +8,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
     <AnimatePresence>
       {open && (
         <motion.div className="fixed inset-0 z-40 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <div className="absolute inset-0 bg-black/55 backdrop-blur-[2px]" onClick={onClose} />
+          <div className="absolute inset-0 bg-black/60" onClick={onClose} />
           <motion.div
             drag="y"
             dragControls={drag}

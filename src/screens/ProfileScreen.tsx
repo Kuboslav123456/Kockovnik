@@ -138,7 +138,7 @@ function ProfileView({ profile }: { profile: Profile }) {
                 className={`relative h-20 overflow-hidden rounded-2xl border text-left ${profile.themeId === t ? 'glow border-transparent' : 'border-line'}`}
                 style={{ background: th.background }}
               >
-                <div className={`absolute inset-0 flex flex-col justify-end p-3 ${open ? '' : 'bg-black/60 backdrop-blur-[2px]'}`}>
+                <div className={`absolute inset-0 flex flex-col justify-end p-3 ${open ? '' : 'bg-black/70'}`}>
                   <div className="font-semibold" style={{ color: th.vars['--t-text'] }}>
                     {open ? th.emoji : '🔒'} {open ? th.name : '???'}
                   </div>

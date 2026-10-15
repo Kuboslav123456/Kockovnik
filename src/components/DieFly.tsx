@@ -50,7 +50,6 @@ export function DieFly({
     scale: [1, 1.5, 1.9, 2.8, 11],
     rotate: [0, -140, -250, -400, -560],
     opacity: [1, 1, 1, 1, 0],
-    filter: ['blur(0px)', 'blur(0px)', 'blur(0px)', 'blur(0px)', 'blur(6px)'],
   }
   const blowUp = {
     // doskáče doprostred, rastie, trasie sa čoraz viac… a praskne
@@ -59,7 +58,6 @@ export function DieFly({
     scale: [1, 1.6, 2, 3, 3.1, 3.3, 3.5, 3.8, 4.6],
     rotate: [0, -160, -300, -390, -380, -400, -378, -402, -390],
     opacity: [1, 1, 1, 1, 1, 1, 1, 1, 0],
-    filter: ['brightness(1)', 'brightness(1)', 'brightness(1)', 'brightness(1.1)', 'brightness(1.3)', 'brightness(1.5)', 'brightness(1.8)', 'brightness(2.3)', 'brightness(4)'],
   }
 
   // portál do <body>: obrazovka hry sa pri výbuchu trasie (transform) a `fixed` by sa inak viazal na ňu
@@ -76,7 +74,19 @@ export function DieFly({
             : { duration: 1.6, times: [0, 0.22, 0.42, 0.6, 1], ease: ['easeOut', 'easeIn', 'easeOut', 'easeIn'] }
         }
       >
-        <Die3D die={die} size={SIZE} rolling={!explode || !boom} />
+        <div className="relative">
+          {/* rozžeravenie pred výbuchom – svetlý kruh namiesto drahého filtra na kocke */}
+          {explode && (
+            <motion.div
+              className="absolute rounded-full"
+              style={{ inset: -SIZE * 0.4, background: 'radial-gradient(circle, #fffbe8 0%, rgba(255,200,90,0.85) 35%, transparent 68%)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0, 0.3, 0.7, 1] }}
+              transition={{ duration: BOOM_AT / 1000, times: [0, 0.55, 0.75, 0.9, 1] }}
+            />
+          )}
+          <Die3D die={die} size={SIZE} rolling={!explode || !boom} />
+        </div>
       </motion.div>
       {boom && <Explosion die={die} x={window.innerWidth / 2} y={window.innerHeight * 0.42} />}
     </div>,
@@ -97,7 +107,7 @@ function Explosion({ die, x, y }: { die: DieDef; x: number; y: number }) {
   )
   const sparks = useMemo(
     () =>
-      Array.from({ length: 28 }, () => {
+      Array.from({ length: 18 }, () => {
         const a = Math.random() * Math.PI * 2
         const dist = 120 + Math.random() * 380
         return { dx: Math.cos(a) * dist, dy: Math.sin(a) * dist, size: 3 + Math.random() * 5, delay: Math.random() * 0.08 }

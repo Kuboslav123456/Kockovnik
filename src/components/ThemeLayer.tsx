@@ -12,9 +12,9 @@ export function ThemeLayer({ themeId, dice }: { themeId: ThemeId; dice?: boolean
     Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v))
     root.dataset.style = theme.style
     root.style.colorScheme = theme.scheme
-    // farba aj pod stavovým riadkom a lištou iPhonu, keby ich pozadie neprekrylo
+    // farba celého plátna (aj pod stavovým riadkom a lištou iPhonu). Musí byť na <html>, nie na <body> –
+    // farba na <body> by sa pri farbe na <html> kreslila NAD pozadím témy (hviezdy, planéta…)
     root.style.background = theme.base
-    document.body.style.background = theme.base
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme.base)
   }, [theme])
 
@@ -150,15 +150,14 @@ function FloatingDice() {
   return (
     <motion.div className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
       {dice.map((d) => (
-        <motion.span
+        // CSS animácia namiesto JavaScriptu – beží na grafickom čipe
+        <span
           key={d.id}
           className="absolute select-none text-accent opacity-[0.13]"
-          style={{ left: `${d.x}%`, top: `${d.y}%`, fontSize: d.size, lineHeight: 1 }}
-          animate={{ y: [0, -40, 0], x: [0, 20, 0], rotate: [0, d.rot] }}
-          transition={{ duration: d.dur, repeat: Infinity, ease: 'linear' }}
+          style={{ left: `${d.x}%`, top: `${d.y}%`, fontSize: d.size, lineHeight: 1, animation: `drift ${d.dur}s linear infinite`, ['--rot' as string]: `${d.rot}deg` }}
         >
           {d.face}
-        </motion.span>
+        </span>
       ))}
     </motion.div>
   )

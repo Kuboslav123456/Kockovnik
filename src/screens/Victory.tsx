@@ -77,25 +77,18 @@ function VictoryView({ result, profiles }: { result: GameResult; profiles: Profi
       {phase === 'celebrate' ? (
           <motion.div key="c" className="flex flex-1 flex-col">
             <div className="relative mt-6 flex flex-col items-center text-center">
-              <motion.div
-                className="absolute top-0 h-64 w-64 rounded-full opacity-60"
+              <div
+                className="spin-slow absolute top-0 h-64 w-64 rounded-full opacity-60"
                 style={{ background: 'repeating-conic-gradient(var(--t-glow) 0 10deg, transparent 10deg 20deg)', maskImage: 'radial-gradient(circle, black 30%, transparent 70%)', WebkitMaskImage: 'radial-gradient(circle, black 30%, transparent 70%)' }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 24, repeat: Infinity, ease: 'linear' }}
               />
               <motion.div ref={avatarRef} initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.15 }} className="relative mt-10">
                 {winner && <Avatar profile={winner} size={120} glow />}
                 {winDie && !dieIntro && (
-                  <motion.div
-                    className="absolute left-1/2 top-1/2 h-0 w-0"
-                    initial={{ rotate: 0 }}
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                  >
-                    <div className="absolute" style={{ left: ORBIT - 17, top: -17 }}>
+                  <div className="spin-slow absolute left-1/2 top-1/2 h-0 w-0" style={{ ['--dur' as string]: '8s' }}>
+                    <motion.div className="absolute" style={{ left: ORBIT - 17, top: -17 }} initial={{ scale: 0 }} animate={{ scale: 1 }}>
                       <Die3D die={winDie} size={34} idle />
-                    </div>
-                  </motion.div>
+                    </motion.div>
+                  </div>
                 )}
                 <motion.div className="absolute -right-4 -top-6 text-5xl" initial={{ y: -40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6, type: 'spring' }}>
                   👑

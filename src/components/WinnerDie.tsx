@@ -123,7 +123,11 @@ export function WinnerDie({ die, target, onDone }: { die: DieDef; target: () => 
               : { duration: 0.6, ease: [0.6, 0, 0.3, 1] }
         }
       >
-        <div style={{ filter: stage === 'land' ? 'drop-shadow(0 0 10px rgba(255,210,100,0.9))' : undefined }}>
+        <div className="relative">
+          {/* zlatá žiara za kockou (filter na točiacej sa kocke by sekal) */}
+          {stage === 'land' && (
+            <div className="absolute rounded-full" style={{ inset: -SIZE * 0.35, background: 'radial-gradient(circle, rgba(255,210,100,0.85), transparent 65%)' }} />
+          )}
           <Die3D die={die} size={SIZE} rolling={stage === 'drop'} show={stage === 'drop' ? null : 6} />
         </div>
       </motion.div>

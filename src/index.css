@@ -53,9 +53,12 @@ body,
   height: 100%;
 }
 
+html {
+  background: #e6cf9e;
+}
+
 body {
   margin: 0;
-  background: #e6cf9e;
   color: var(--t-text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -93,17 +96,16 @@ input {
 }
 
 .glass {
-  background: var(--t-surface);
+  /* Bez backdrop-filter: rozmazanie nad animovaným pozadím (hviezdy, kocky) by mobil
+     prepočítaval pri každom snímku pre každú kartu a tlačidlo – to bolo hlavné sekanie.
+     Jemné stmavenie pod priesvitnou farbou nahrádza stratu rozmazania. */
+  background: linear-gradient(var(--t-surface), var(--t-surface)), rgba(0, 0, 0, 0.14);
   border: 1px solid var(--t-border);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
 }
 
 .glass-strong {
-  background: var(--t-surface-strong);
+  background: linear-gradient(var(--t-surface-strong), var(--t-surface-strong)), rgba(0, 0, 0, 0.18);
   border: 1px solid var(--t-border);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
 }
 
 .glow {
@@ -161,6 +163,36 @@ input {
 @keyframes gridmove {
   to { background-position: 0 48px; }
 }
+/* Točenie kocky a vznášanie – čisto CSS transformácie, bežia na grafickom čipe */
+@keyframes die-spin-x {
+  from { transform: rotateX(-24deg); }
+  to { transform: rotateX(336deg); }
+}
+@keyframes die-spin-y {
+  from { transform: rotateY(36deg); }
+  to { transform: rotateY(396deg); }
+}
+.die-spin-x {
+  animation: die-spin-x 30s linear infinite;
+}
+.die-spin-y {
+  animation: die-spin-y 10.3s linear infinite;
+}
+@keyframes levitate {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.levitate {
+  animation: levitate 2.6s ease-in-out infinite;
+}
+@keyframes drift {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(20px, -40px) rotate(calc(var(--rot) / 2)); }
+  100% { transform: translate(0, 0) rotate(var(--rot)); }
+}
+.spin-slow {
+  animation: spin var(--dur, 24s) linear infinite;
+}
 @keyframes shimmer {
   to { background-position: 200% 0; }
 }
@@ -176,6 +208,15 @@ input {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+  /* kocka bez točenia ostane natočená tak, aby boli vidieť tri steny */
+  .die-spin-x {
+    animation: none !important;
+    transform: rotateX(-24deg);
+  }
+  .die-spin-y {
+    animation: none !important;
+    transform: rotateY(36deg);
+  }
 }
 
 /* ---------- Klávesnice (odomykateľné) ---------- */
@@ -184,11 +225,9 @@ input {
   transition: background 500ms, box-shadow 500ms, color 500ms, border-color 500ms;
 }
 .key-classic {
-  background: var(--t-surface);
+  background: linear-gradient(var(--t-surface), var(--t-surface)), rgba(0, 0, 0, 0.16);
   border: 1px solid var(--t-border);
   color: var(--t-text);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
 }
 .key-dice {
   background: linear-gradient(160deg, #fffdf6 0%, #f3e6cc 70%, #e4d2ae 100%);

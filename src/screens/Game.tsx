@@ -399,9 +399,9 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
             {favDie && (
               <motion.div key={current.id} initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}>
                 {/* jemne levituje nad stolom */}
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }} className="grid h-[84px] w-[84px] place-items-center" ref={dieRef}>
+                <div className="levitate grid h-[84px] w-[84px] place-items-center" ref={dieRef}>
                   <Die3D die={favDie} size={52} idle />
-                </motion.div>
+                </div>
               </motion.div>
             )}
             <motion.div

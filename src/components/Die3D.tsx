@@ -1,5 +1,5 @@
 import { animate, motion, useAnimationFrame, useMotionValue } from 'framer-motion'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import type { DieDef } from '../lib/dice'
 
 const PIPS: Record<number, [number, number][]> = {
@@ -14,19 +14,7 @@ const PIPS: Record<number, [number, number][]> = {
 /** natočenie (rotateX, rotateY), pri ktorom je daná stena vpredu */
 const FRONT: Record<number, [number, number]> = { 1: [0, 0], 6: [0, 180], 2: [0, -90], 5: [0, 90], 3: [-90, 0], 4: [90, 0] }
 
-/**
- * 3D kocka z Klenotnice. `idle` = pomaly sa točí, `interactive` = dá sa otáčať prstom.
- * Ostatné kocky stoja v pootočenej polohe, aby boli vidieť tri steny.
- */
-export function Die3D({
-  die,
-  size = 64,
-  idle = false,
-  interactive = false,
-  speed = 1,
-  rolling = false,
-  show = null,
-}: {
+type Props = {
   die: DieDef
   size?: number
   idle?: boolean
@@ -36,11 +24,45 @@ export function Die3D({
   rolling?: boolean
   /** po hode dopadne touto stenou dopredu */
   show?: number | null
-}) {
+}
+
+/**
+ * 3D kocka z Klenotnice. `idle` = pomaly sa točí, `interactive` = dá sa otáčať prstom.
+ * Ostatné kocky stoja v pootočenej polohe, aby boli vidieť tri steny.
+ *
+ * Výkon: stojaca a pomaly sa točiaca kocka nepoužívajú JavaScript na každý snímok –
+ * točenie robí CSS animácia priamo na grafickom čipe, takže nesekne ani pri prekresľovaní appky.
+ */
+export function Die3D(props: Props) {
+  const { rolling = false, show = null, interactive = false } = props
+  if (rolling || show != null || interactive) return <AnimatedDie {...props} />
+  return <CssDie {...props} />
+}
+
+/** Stojaca kocka alebo pomalé točenie cez CSS (bez JavaScriptu počas animácie) */
+function CssDie({ die, size = 64, idle = false, speed = 1 }: Props) {
+  if (!idle) {
+    return (
+      <Shell die={die} size={size}>
+        <Cube die={die} size={size} style={{ transform: 'rotateX(-24deg) rotateY(36deg)' }} />
+      </Shell>
+    )
+  }
+  // vonkajší prvok sa pomaly kníše okolo osi X, vnútorný sa točí okolo Y
+  return (
+    <Shell die={die} size={size}>
+      <div className="die-spin-x" style={{ width: size, height: size, transformStyle: 'preserve-3d', animationDuration: `${30 / speed}s` }}>
+        <Cube die={die} size={size} className="die-spin-y" style={{ animationDuration: `${10.3 / speed}s` }} />
+      </div>
+    </Shell>
+  )
+}
+
+/** Hod, dopad na číslo a otáčanie prstom – tu je JavaScript potrebný */
+function AnimatedDie({ die, size = 64, idle = false, interactive = false, speed = 1, rolling = false, show = null }: Props) {
   const rx = useMotionValue(-24)
   const ry = useMotionValue(36)
   const drag = useRef<{ x: number; y: number } | null>(null)
-  const half = size / 2
 
   useAnimationFrame((_, dt) => {
     if (drag.current) return
@@ -68,6 +90,83 @@ export function Die3D({
     }
   }, [show, rolling]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  return (
+    <Shell
+      die={die}
+      size={size}
+      interactive={interactive}
+      onPointerDown={(e) => {
+        drag.current = { x: e.clientX, y: e.clientY }
+        ;(e.target as Element).setPointerCapture?.(e.pointerId)
+      }}
+      onPointerMove={(e) => {
+        if (!drag.current) return
+        ry.set(ry.get() + (e.clientX - drag.current.x) * 0.6)
+        rx.set(rx.get() - (e.clientY - drag.current.y) * 0.6)
+        drag.current = { x: e.clientX, y: e.clientY }
+      }}
+      onPointerUp={() => (drag.current = null)}
+      onPointerCancel={() => (drag.current = null)}
+    >
+      <motion.div style={{ width: size, height: size, position: 'relative', transformStyle: 'preserve-3d', rotateX: rx, rotateY: ry }}>
+        <Faces die={die} size={size} />
+      </motion.div>
+    </Shell>
+  )
+}
+
+/**
+ * Obal s perspektívou. Žiara vzácnych kociek je obyčajný rozmazaný kruh za kockou –
+ * `filter: drop-shadow` na točiacej sa kocke by mobil prepočítaval pri každom snímku.
+ */
+function Shell({
+  die,
+  size,
+  interactive,
+  children,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+}: {
+  die: DieDef
+  size: number
+  interactive?: boolean
+  children: React.ReactNode
+  onPointerDown?: (e: React.PointerEvent) => void
+  onPointerMove?: (e: React.PointerEvent) => void
+  onPointerUp?: () => void
+  onPointerCancel?: () => void
+}) {
+  return (
+    <div
+      style={{ width: size, height: size, perspective: size * 7, position: 'relative', touchAction: interactive ? 'none' : undefined }}
+      onPointerDown={interactive ? onPointerDown : undefined}
+      onPointerMove={interactive ? onPointerMove : undefined}
+      onPointerUp={interactive ? onPointerUp : undefined}
+      onPointerCancel={interactive ? onPointerCancel : undefined}
+    >
+      {die.glow && (
+        <div
+          className="pointer-events-none absolute rounded-full"
+          style={{ inset: -size * 0.3, background: `radial-gradient(circle, ${die.glow} 0%, transparent 65%)` }}
+        />
+      )}
+      {children}
+    </div>
+  )
+}
+
+function Cube({ die, size, style, className }: { die: DieDef; size: number; style?: CSSProperties; className?: string }) {
+  return (
+    <div className={className} style={{ width: size, height: size, position: 'relative', transformStyle: 'preserve-3d', ...style }}>
+      <Faces die={die} size={size} />
+    </div>
+  )
+}
+
+function Faces({ die, size }: { die: DieDef; size: number }) {
+  const half = size / 2
   const faces: { n: number; t: string }[] = [
     { n: 1, t: `translateZ(${half}px)` },
     { n: 6, t: `rotateY(180deg) translateZ(${half}px)` },
@@ -76,66 +175,42 @@ export function Die3D({
     { n: 3, t: `rotateX(90deg) translateZ(${half}px)` },
     { n: 4, t: `rotateX(-90deg) translateZ(${half}px)` },
   ]
-
   return (
-    <div
-      style={{ width: size, height: size, perspective: size * 7, filter: die.glow ? `drop-shadow(0 0 ${size * 0.18}px ${die.glow})` : undefined, touchAction: interactive ? 'none' : undefined }}
-      onPointerDown={
-        interactive
-          ? (e) => {
-              drag.current = { x: e.clientX, y: e.clientY }
-              ;(e.target as Element).setPointerCapture?.(e.pointerId)
-            }
-          : undefined
-      }
-      onPointerMove={
-        interactive
-          ? (e) => {
-              if (!drag.current) return
-              ry.set(ry.get() + (e.clientX - drag.current.x) * 0.6)
-              rx.set(rx.get() - (e.clientY - drag.current.y) * 0.6)
-              drag.current = { x: e.clientX, y: e.clientY }
-            }
-          : undefined
-      }
-      onPointerUp={interactive ? () => (drag.current = null) : undefined}
-      onPointerCancel={interactive ? () => (drag.current = null) : undefined}
-    >
-      <motion.div style={{ width: size, height: size, position: 'relative', transformStyle: 'preserve-3d', rotateX: rx, rotateY: ry }}>
-        {faces.map((f) => (
-          <div
-            key={f.n}
-            className="absolute inset-0 overflow-hidden"
-            style={{
-              transform: f.t,
-              background: die.face,
-              border: `1px solid ${die.edge}`,
-              borderRadius: '18%',
-              boxShadow: `inset 0 0 ${size * 0.14}px rgba(0,0,0,0.28)`,
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-            }}
-          >
-            {die.shine && <div className="shimmer absolute inset-0 opacity-60" />}
-            {PIPS[f.n].map(([x, y], i) => (
-              <span
-                key={i}
-                className="absolute rounded-full"
-                style={{
-                  left: `${x}%`,
-                  top: `${y}%`,
-                  width: size * 0.17,
-                  height: size * 0.17,
-                  transform: 'translate(-50%,-50%)',
-                  background: die.pip,
-                  boxShadow: die.pipGlow ? `0 0 ${size * 0.1}px ${die.pip}, inset 0 1px 2px rgba(255,255,255,0.4)` : 'inset 0 2px 3px rgba(0,0,0,0.45)',
-                }}
-              />
-            ))}
-          </div>
-        ))}
-      </motion.div>
-    </div>
+    <>
+      {faces.map((f) => (
+        <div
+          key={f.n}
+          className="absolute inset-0 overflow-hidden"
+          style={{
+            transform: f.t,
+            background: die.face,
+            border: `1px solid ${die.edge}`,
+            borderRadius: '18%',
+            boxShadow: `inset 0 0 ${size * 0.14}px rgba(0,0,0,0.28)`,
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+          }}
+        >
+          {/* lesk – statický, kocka sa točí, takže sa aj tak mení */}
+          {die.shine && <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.38) 0%, transparent 42%, transparent 70%, rgba(255,255,255,0.12) 100%)' }} />}
+          {PIPS[f.n].map(([x, y], i) => (
+            <span
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: `${x}%`,
+                top: `${y}%`,
+                width: size * 0.17,
+                height: size * 0.17,
+                transform: 'translate(-50%,-50%)',
+                background: die.pip,
+                boxShadow: die.pipGlow ? `0 0 ${size * 0.1}px ${die.pip}, inset 0 1px 2px rgba(255,255,255,0.4)` : 'inset 0 2px 3px rgba(0,0,0,0.45)',
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </>
   )
 }
 
