@@ -313,7 +313,7 @@ function ForgeBar({ profile, spec, onForge }: { profile: Profile; spec: ForgeSpe
 const STRIKES = [
   { sweep: 1100, good: 0.12, perfect: 0.045 },
   { sweep: 850, good: 0.1, perfect: 0.038 },
-  { sweep: 650, good: 0.085, perfect: 0.032 },
+  { sweep: 800, good: 0.085, perfect: 0.032 },
 ]
 
 const HIT_TEXT = ['Vedľa…', 'Dobrý úder!', 'Dokonalý úder!']
