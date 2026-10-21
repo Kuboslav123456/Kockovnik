@@ -90,6 +90,14 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
 
   const value = Number(input || 0)
   const favDie = profileDie(current)
+  const manuscript = THEMES[cur.themeId].style === 'manuscript'
+  // nízky displej (napr. iPhone SE): menšia kocka a číslo, aby sa zmestili hráči aj celá klávesnica
+  const [compact, setCompact] = useState(() => window.innerHeight < 720)
+  useEffect(() => {
+    const onResize = () => setCompact(window.innerHeight < 720)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
   const comment = commentary(game, byId)
 
   // počas hry nenechať obrazovku zhasnúť (inak sa uspí aj zvuk)
@@ -229,7 +237,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
       </AnimatePresence>
 
       {/* Horná lišta */}
-      <div className="flex items-baseline gap-1 px-3" style={{ paddingTop: 'calc(max(env(safe-area-inset-top), 12px) + 18px)' }}>
+      <div className="flex items-baseline gap-1 px-3" style={{ paddingTop: `calc(max(env(safe-area-inset-top), 12px) + ${compact ? 6 : 18}px)` }}>
         <button className="grid h-11 w-11 shrink-0 place-items-center self-center text-xl text-muted" onClick={() => { sfx.tap(); nav.reset({ name: 'home' }) }} aria-label="Domov">
           <HistoricHome />
         </button>
@@ -254,17 +262,22 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
 
       <AnimatePresence>
         {d.finalRound && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-            <div className="font-caps mx-[18px] mt-2 bg-accent px-3 py-1.5 text-center text-[13px] text-on-accent">
-              ✠ Posledné kolo! {byId(d.triggeredBy!).name} má {fmt(d.totals[d.triggeredBy!])}. Zostáva {d.turnsLeft}{' '}
-              {d.turnsLeft === 1 ? 'ťah' : d.turnsLeft < 5 ? 'ťahy' : 'ťahov'}.
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="shrink-0">
+            {/* vždy jeden riadok – dvojriadkový pás by vytlačil hráčov z obrazovky */}
+            <div className="font-caps mx-[18px] mt-2 truncate bg-accent px-3 py-1 text-center text-[13px] text-on-accent">
+              ✠ Posledné kolo · {byId(d.triggeredBy!).name} {fmt(d.totals[d.triggeredBy!])} · ešte {d.turnsLeft}{' '}
+              {d.turnsLeft === 1 ? 'ťah' : d.turnsLeft < 5 ? 'ťahy' : 'ťahov'}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Hráči – zapisujú sa ako riadky kroniky */}
-      <div className="no-scrollbar mx-[18px] mt-2.5 flex min-h-0 shrink flex-col gap-0.5 overflow-y-auto">
+      <div
+        className="no-scrollbar mx-[18px] mt-2.5 flex shrink flex-col gap-0.5 overflow-y-auto"
+        // aspoň 2–3 riadky hráčov; na malom displeji menej, aby klávesnica nikdy nevypadla z obrazovky
+        style={{ minHeight: `min(${60 + (Math.min(game.playerIds.length, 3) - 1) * 51}px, max(58px, calc(100dvh - ${compact ? 560 : 600}px)))` }}
+      >
         {game.playerIds.map((id, i) => {
           const p = byId(id)
           const c = cosmetics(p)
@@ -274,6 +287,8 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
           const leader = d.ranking[0] === id && total > 0
           const last = i === game.playerIds.length - 1
           const { initial, rest } = splitName(p.name)
+          // ozdobná iniciála patrí k Rukopisu; v ostatných témach by „S“ + „ofinka“ pôsobilo ako zlé meno
+          const dropCap = manuscript
           const struck = zero?.playerId === id
           const ink = flash?.playerId === id && flash.points >= 1000 && flash.burst === 'float'
           return (
@@ -312,22 +327,24 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
                     <motion.span
                       key={`on-${id}-${d.round}`}
                       className="initial-box relative"
-                      style={{ width: 34, height: 36, fontSize: 28 }}
+                      style={{ width: 34, height: 36, fontSize: dropCap ? 28 : 20 }}
                       initial={{ scale: 0, rotate: -20 }}
                       animate={{ scale: 1, rotate: 0 }}
                       transition={{ type: 'spring', stiffness: 300, damping: 18 }}
                     >
-                      {initial}
+                      {dropCap ? initial : p.avatar}
                     </motion.span>
-                  ) : (
+                  ) : dropCap ? (
                     <span className="font-display relative text-[26px] leading-none text-accent">{initial}</span>
+                  ) : (
+                    <span className="relative text-[22px] leading-none">{p.avatar}</span>
                   )}
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className={`relative truncate ${active ? 'text-lg' : 'text-base'}`}>
-                    {rest}
-                    <span className="ml-1 text-[0.8em]">{p.avatar}</span>
+                    {dropCap ? rest : p.name}
+                    {dropCap && <span className="ml-1 text-[0.8em]">{p.avatar}</span>}
                     {c.titleId && <span className="text-[0.8em] italic text-muted">, {TITLES[c.titleId]}</span>}
                     {leader && <span className="ml-1 text-accent2">♛</span>}
                     {struck && (
@@ -371,37 +388,39 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
       {/* Zadávanie: citát, hodnota, klávesnica */}
       {/* zadávanie má prirodzenú výšku a nezmenšuje sa – pri malom displeji sa posúva zoznam hráčov */}
       <motion.div animate={shake} className="flex shrink-0 grow basis-auto flex-col">
-        <div className="mx-[22px] mt-3 text-center">
+        <div className={`mx-[22px] text-center ${compact ? 'mt-1' : 'mt-3'}`}>
           {/* komentátor: hláška k poslednému ťahu */}
-          <div className="flex min-h-[38px] items-end justify-center">
-            {comment && (
+          {/* komentátor: hláška k poslednému ťahu; keď nemá čo povedať, ukáže sa citát hráča na ťahu */}
+          <div className={`flex items-end justify-center ${compact ? 'min-h-[34px]' : 'min-h-[40px]'}`}>
+            {comment ? (
               <motion.div
-                key={game.turns.length}
+                key={`c${game.turns.length}`}
                 initial={{ opacity: 0, y: 8, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ type: 'spring', stiffness: 320, damping: 24, delay: 0.15 }}
-                className="font-caps line-clamp-2 text-[15px] leading-tight text-accent"
+                className={`font-caps line-clamp-2 leading-tight text-accent ${compact ? 'text-[13px]' : 'text-[15px]'}`}
               >
                 {comment}
               </motion.div>
+            ) : (
+              <motion.div
+                key={`q${current.id}`}
+                initial={game.turns.length ? { opacity: 0, y: 6 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="truncate text-[15px] italic text-muted"
+              >
+                {quote(current)}
+              </motion.div>
             )}
           </div>
-          <motion.div
-            key={current.id}
-            initial={game.turns.length ? { opacity: 0, y: 6 } : false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            className="truncate text-[15px] italic text-muted"
-          >
-            {quote(current)}
-          </motion.div>
           <div className="mt-0.5 flex items-center justify-center gap-3">
             {/* obľúbená kocka hráča na ťahu z Klenotnice */}
             {favDie && (
               <motion.div key={current.id} initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}>
                 {/* jemne levituje nad stolom */}
-                <div className="levitate grid h-[84px] w-[84px] place-items-center" ref={dieRef}>
-                  <Die3D die={favDie} size={52} idle />
+                <div className={`levitate grid place-items-center ${compact ? 'h-[54px] w-[60px]' : 'h-[72px] w-[78px]'}`} ref={dieRef}>
+                  <Die3D die={favDie} size={compact ? 38 : 52} idle />
                 </div>
               </motion.div>
             )}
@@ -409,14 +428,14 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
               key={value}
               initial={{ scale: 1.08 }}
               animate={{ scale: 1 }}
-              className={`num-weight tabular inline-block text-[56px] leading-none ${value ? 'text-accent' : 'text-faint'} ${FONTS[cur.fontId].className}`}
+              className={`num-weight tabular inline-block leading-none ${compact ? 'text-[44px]' : 'text-[56px]'} ${value ? 'text-accent' : 'text-faint'} ${FONTS[cur.fontId].className}`}
             >
               {value ? `+${fmt(value)}` : '0'}
             </motion.div>
           </div>
           {!d.finished && (
             <button
-              className="font-caps mt-1 min-h-9 px-3 text-sm text-muted underline decoration-accent2 decoration-dotted underline-offset-4"
+              className="font-caps min-h-8 px-3 text-sm text-muted underline decoration-accent2 decoration-dotted underline-offset-4"
               onClick={() => {
                 sfx.tap(cur.soundId)
                 setShowRoller(true)
@@ -425,10 +444,10 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
               🎲 Hodiť virtuálnymi kockami
             </button>
           )}
-          <div className="h-4 text-xs text-accent">
+          <div className="relative h-0 text-xs text-accent">
             <AnimatePresence>
               {error && (
-                <motion.span initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <motion.span className="absolute inset-x-0 top-0 z-10" initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                   {error}
                 </motion.span>
               )}
@@ -446,21 +465,21 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
           className="mt-auto flex grow flex-col justify-end px-4 pt-2"
         >
           {/* najpoužívanejšie riadky (+50… a zápis) sa natiahnu do voľného miesta, čísla ostanú rovnaké */}
-          <div className="grid max-h-20 min-h-14 grow basis-14 grid-cols-4 gap-1.5">
+          <div className="grid max-h-20 min-h-12 grow basis-12 grid-cols-4 gap-1.5">
             {QUICK.map((q) => (
               <Key key={q} skin={cur.keypadId} className="key-quick tabular whitespace-nowrap px-1 text-[24px] font-semibold leading-none" onClick={() => quick(q)}>
                 +{q}
               </Key>
             ))}
           </div>
-          <div className="mt-1.5 grid max-h-[242px] min-h-[210px] grow-[2] basis-[210px] grid-cols-3 gap-1.5">
+          <div className="mt-1.5 grid max-h-[242px] min-h-[184px] grow-[2] basis-[184px] grid-cols-3 gap-1.5">
             {KEYS.map((k) => (
               <Key key={k} skin={cur.keypadId} className="min-h-12 text-2xl font-semibold" onClick={() => press(k)} aria-label={k === '⌫' ? 'Zmazať' : k}>
                 {romanKeys && ROMAN_KEYS[k] ? ROMAN_KEYS[k] : k}
               </Key>
             ))}
           </div>
-          <div className="mt-3.5 grid max-h-20 min-h-14 grow basis-14 grid-cols-[1fr_1fr_1.7fr] gap-1.5">
+          <div className="mt-3 grid max-h-20 min-h-12 grow basis-12 grid-cols-[1fr_1fr_1.7fr] gap-1.5">
             <Key skin={cur.keypadId} className="key-action whitespace-nowrap px-1 text-[16px]" disabled={!game.turns.length} onClick={undo}>
               Späť
             </Key>
