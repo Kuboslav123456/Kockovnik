@@ -18,9 +18,10 @@ import { DiceRoller } from '../components/DiceRoller'
 import { commentary } from '../lib/commentator'
 import { profileDie } from '../lib/forge'
 
-const QUICK = [50, 100, 500, 1000]
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', '⌫']
-const ROMAN_KEYS: Record<string, string> = { '1': 'I', '2': 'II', '3': 'III' }
+// body sa zapisujú hlavne rýchlymi klávesmi; +5000 = postupka
+const QUICK = [50, 100, 500, 1000, 5000]
+// 1–3 sa pri kockách skoro nepíšu (všetko je násobok 50), preto ich riadok vypadol
+const KEYS = ['4', '5', '6', '7', '8', '9', '00', '0', '⌫']
 
 const UNKNOWN: Omit<Profile, 'id'> = {
   name: '?', avatar: '❔', xp: 0, achievements: [], themeId: 'manuscript', titleId: null, effectId: 'confetti',
@@ -63,10 +64,10 @@ export function Game() {
   }, [game]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!game) return null
-  return <GameView game={game} profiles={app.profiles} romanKeys={app.settings.romanKeys} />
+  return <GameView game={game} profiles={app.profiles} />
 }
 
-function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: Profile[]; romanKeys: boolean }) {
+function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] }) {
   const nav = useNav()
   const d = deriveGame(game)
   const byId = (id: string): Profile => profiles.find((p) => p.id === id) ?? { ...UNKNOWN, id }
@@ -276,7 +277,7 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
       <div
         className="no-scrollbar mx-[18px] mt-2.5 flex shrink flex-col gap-0.5 overflow-y-auto"
         // aspoň 2–3 riadky hráčov; na malom displeji menej, aby klávesnica nikdy nevypadla z obrazovky
-        style={{ minHeight: `min(${60 + (Math.min(game.playerIds.length, 3) - 1) * 51}px, max(58px, calc(100dvh - ${compact ? 560 : 600}px)))` }}
+        style={{ minHeight: `min(${60 + (Math.min(game.playerIds.length, 3) - 1) * 51}px, max(58px, calc(100dvh - ${compact ? 512 : 552}px)))` }}
       >
         {game.playerIds.map((id, i) => {
           const p = byId(id)
@@ -465,17 +466,24 @@ function GameView({ game, profiles, romanKeys }: { game: ActiveGame; profiles: P
           className="mt-auto flex grow flex-col justify-end px-4 pt-2"
         >
           {/* najpoužívanejšie riadky (+50… a zápis) sa natiahnu do voľného miesta, čísla ostanú rovnaké */}
-          <div className="grid max-h-20 min-h-12 grow basis-12 grid-cols-4 gap-1.5">
+          <div className="grid max-h-20 min-h-12 grow basis-12 grid-cols-5 gap-1.5">
             {QUICK.map((q) => (
-              <Key key={q} skin={cur.keypadId} className="key-quick tabular whitespace-nowrap px-1 text-[24px] font-semibold leading-none" onClick={() => quick(q)}>
+              <Key
+                key={q}
+                skin={cur.keypadId}
+                className={`key-quick tabular flex flex-col items-center justify-center whitespace-nowrap px-0.5 font-semibold leading-none ${q === 5000 ? 'key-straight' : ''} ${compact ? 'text-[19px]' : 'text-[21px]'}`}
+                onClick={() => quick(q)}
+                aria-label={q === 5000 ? '+5000 postupka' : `+${q}`}
+              >
                 +{q}
+                {q === 5000 && <span className="mt-0.5 text-[9px] font-normal uppercase tracking-wider opacity-75">postupka</span>}
               </Key>
             ))}
           </div>
-          <div className="mt-1.5 grid max-h-[242px] min-h-[184px] grow-[2] basis-[184px] grid-cols-3 gap-1.5">
+          <div className="mt-1.5 grid max-h-[182px] min-h-[138px] grow-[2] basis-[138px] grid-cols-3 gap-1.5">
             {KEYS.map((k) => (
-              <Key key={k} skin={cur.keypadId} className="min-h-12 text-2xl font-semibold" onClick={() => press(k)} aria-label={k === '⌫' ? 'Zmazať' : k}>
-                {romanKeys && ROMAN_KEYS[k] ? ROMAN_KEYS[k] : k}
+              <Key key={k} skin={cur.keypadId} className="min-h-11 text-2xl font-semibold" onClick={() => press(k)} aria-label={k === '⌫' ? 'Zmazať' : k}>
+                {k}
               </Key>
             ))}
           </div>

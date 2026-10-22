@@ -35,7 +35,6 @@ export function Home() {
   const toggles: { label: string; on: boolean; flip: () => void }[] = [
     { label: 'Zvuk', on: app.settings.sound, flip: () => updateSettings({ sound: !app.settings.sound }) },
     { label: 'Vibrácie', on: app.settings.vibration, flip: () => updateSettings({ vibration: !app.settings.vibration }) },
-    { label: 'Rímske I–III', on: app.settings.romanKeys, flip: () => updateSettings({ romanKeys: !app.settings.romanKeys }) },
   ]
 
   return (

@@ -79,7 +79,7 @@ Po každej dohratej hre otvorí každý hráč truhlicu s náhodnou kockou (24 k
 
 V hre pod hodnotou je „Hodiť virtuálnymi kockami“. Hráč hodí 6 kockami, odloží bodujúce, môže hodiť zvyšné alebo zapísať. Keď nič nebodujúce nepadne, prepadol. Keď odloží všetkých šesť, hádže znova všetkými („horúce kocky“). Ako kocky sa použije obľúbená kocka hráča z Klenotnice.
 
-Bodovanie (`src/lib/scoring.ts`): jednotka 100, päťka 50, tri rovnaké = číslo × 100 (tri jednotky 1 000), každá ďalšia rovnaká kocka zdvojnásobí, postupka 1–6 = 1 500.
+Bodovanie (`src/lib/scoring.ts`): jednotka 100, päťka 50, tri rovnaké = číslo × 100 (tri jednotky 1 000), každá ďalšia rovnaká kocka zdvojnásobí, postupka 1–6 = 5 000 (domáce pravidlo, v hre aj kláves +5000).
 
 Pri odvete a pri novej hre s rovnakou partiou začína ďalší hráč v poradí.
 

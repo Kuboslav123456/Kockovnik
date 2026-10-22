@@ -2,13 +2,13 @@
 //  • jednotka = 100, päťka = 50
 //  • tri rovnaké = číslo × 100, tri jednotky = 1 000
 //  • každá ďalšia rovnaká kocka hodnotu zdvojnásobí (štyri dvojky = 400, päť dvojok = 800…)
-//  • postupka 1–6 = 1 500
+//  • postupka 1–6 = 5 000 (domáce pravidlo)
 
 export const SCORING_RULES = [
   'Jednotka 100, päťka 50',
   'Tri rovnaké = číslo × 100, tri jednotky 1 000',
   'Každá ďalšia rovnaká kocka zdvojnásobí',
-  'Postupka 1–6 = 1 500',
+  'Postupka 1–6 = 5 000',
 ]
 
 const counts = (faces: number[]) => {
@@ -24,7 +24,7 @@ const counts = (faces: number[]) => {
 export function scoreSelection(faces: number[]): number | null {
   if (!faces.length) return null
   const c = counts(faces)
-  if (faces.length === 6 && c.slice(1).every((n) => n === 1)) return 1500
+  if (faces.length === 6 && c.slice(1).every((n) => n === 1)) return 5000
   let total = 0
   for (let f = 1; f <= 6; f++) {
     const n = c[f]
@@ -39,7 +39,7 @@ export function scoreSelection(faces: number[]): number | null {
 /** Najlepší možný zisk z hodu (všetky bodujúce kocky) – 0 znamená prepadnutie. */
 export function bestScore(faces: number[]): { points: number; dice: number[] } {
   const c = counts(faces)
-  if (faces.length === 6 && c.slice(1).every((n) => n === 1)) return { points: 1500, dice: faces.map((_, i) => i) }
+  if (faces.length === 6 && c.slice(1).every((n) => n === 1)) return { points: 5000, dice: faces.map((_, i) => i) }
   const picked: number[] = []
   faces.forEach((f, i) => {
     if (f === 1 || f === 5 || c[f] >= 3) picked.push(i)

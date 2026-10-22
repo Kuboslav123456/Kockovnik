@@ -320,6 +320,11 @@ input {
   transform: translateY(3px);
   box-shadow: 0 1px 0 #8a5a00;
 }
+/* +5000 (postupka) – zvýraznený vnútorným lemom, funguje pri každom štýle klávesnice */
+.key-straight {
+  outline: 1.5px solid var(--t-accent2);
+  outline-offset: -4px;
+}
 /* hlavné tlačidlo Zapísať pri každom štýle */
 .key-primary.key-classic,
 .key-primary.key-dice {
