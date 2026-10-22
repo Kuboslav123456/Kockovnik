@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useAnimationControls, type HTMLMotionProps } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNav } from '../nav'
 import { abandonGame, addTurn, finishGame, undoTurn, useApp } from '../lib/store'
 import { deriveGame, fmt, roundTable, toRoman } from '../lib/game'
@@ -92,12 +92,43 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
   const favDie = profileDie(current)
   const manuscript = THEMES[cur.themeId].style === 'manuscript'
   // nízky displej (napr. iPhone SE): menšia kocka a číslo, aby sa zmestili hráči aj celá klávesnica
-  const [compact, setCompact] = useState(() => window.innerHeight < 720)
+  // Prispôsobenie výške displeja: po vykreslení sa zmeria, koľko hráčov je vidieť.
+  // Ak menej ako 2–3, zmenší sa najprv hracia plocha (fit 1), potom aj ostatné prvky (fit 2).
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const n = game.playerIds.length
+  // stupeň prispôsobenia platí pre daný počet hráčov a výšku okna – pri zmene sa začína odznova
+  const baseFit = () => (window.innerHeight < 720 ? 2 : 0)
+  const [fitState, setFitState] = useState(() => ({ key: `${n}/${window.innerHeight}`, fit: baseFit() }))
+  const fitKey = `${n}/${window.innerHeight}`
+  const fit = fitState.key === fitKey ? fitState.fit : baseFit()
+  const bumpFit = () => setFitState((st) => ({ key: fitKey, fit: Math.min(3, (st.key === fitKey ? st.fit : baseFit()) + 1) }))
+  const [, rerender] = useState(0)
   useEffect(() => {
-    const onResize = () => setCompact(window.innerHeight < 720)
+    const onResize = () => rerender((x) => x + 1)
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+  const checkFit = useRef(() => {})
+  checkFit.current = () => {
+    const list = listRef.current
+    if (!list || fit >= 3) return
+    const rows = Array.from(list.children) as HTMLElement[]
+    if (!rows.length) return
+    const base = rows[0].offsetTop
+    const visible = rows.filter((r) => r.offsetTop - base + r.offsetHeight <= list.clientHeight + 1).length
+    if (visible < Math.min(n, 3)) bumpFit()
+  }
+  useLayoutEffect(() => checkFit.current())
+  // riadky sa zväčšia aj neskôr (načítanie písma, pás posledného kola) – vtedy treba merať znova
+  useEffect(() => {
+    const list = listRef.current
+    if (!list || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => checkFit.current())
+    ro.observe(list)
+    Array.from(list.children).forEach((c) => ro.observe(c))
+    return () => ro.disconnect()
+  }, [n])
+  const compact = fit >= 2
   const comment = commentary(game, byId)
 
   // počas hry nenechať obrazovku zhasnúť (inak sa uspí aj zvuk)
@@ -274,11 +305,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
       </AnimatePresence>
 
       {/* Hráči – zapisujú sa ako riadky kroniky */}
-      <div
-        className="no-scrollbar mx-[18px] mt-2.5 flex shrink flex-col gap-0.5 overflow-y-auto"
-        // aspoň 2–3 riadky hráčov; na malom displeji menej, aby klávesnica nikdy nevypadla z obrazovky
-        style={{ minHeight: `min(${60 + (Math.min(game.playerIds.length, 3) - 1) * 51}px, max(58px, calc(100dvh - ${compact ? 526 : 566}px)))` }}
-      >
+      <div ref={listRef} className="no-scrollbar mx-[18px] mt-2.5 flex min-h-[58px] shrink flex-col gap-0.5 overflow-y-auto">
         {game.playerIds.map((id, i) => {
           const p = byId(id)
           const c = cosmetics(p)
@@ -371,7 +398,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
 
               <AnimatedNumber
                 value={total}
-                className={`num-weight inline-block shrink-0 leading-none ${active ? 'text-2xl' : 'text-[19px]'} ${FONTS[c.fontId].className}`}
+                className={`num-weight inline-block shrink-0 leading-none ${active ? 'text-[32px]' : 'text-[24px]'} ${FONTS[c.fontId].className}`}
               />
 
               <AnimatePresence>
@@ -415,36 +442,6 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
               </motion.div>
             )}
           </div>
-          <div className="mt-0.5 flex items-center justify-center gap-3">
-            {/* obľúbená kocka hráča na ťahu z Klenotnice */}
-            {favDie && (
-              <motion.div key={current.id} initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}>
-                {/* jemne levituje nad stolom */}
-                <div className={`levitate grid place-items-center ${compact ? 'h-[54px] w-[60px]' : 'h-[72px] w-[78px]'}`} ref={dieRef}>
-                  <Die3D die={favDie} size={compact ? 38 : 52} idle />
-                </div>
-              </motion.div>
-            )}
-            <motion.div
-              key={value}
-              initial={{ scale: 1.08 }}
-              animate={{ scale: 1 }}
-              className={`num-weight tabular inline-block leading-none ${compact ? 'text-[44px]' : 'text-[56px]'} ${value ? 'text-accent' : 'text-faint'} ${FONTS[cur.fontId].className}`}
-            >
-              {value ? `+${fmt(value)}` : '0'}
-            </motion.div>
-          </div>
-          {!d.finished && (
-            <button
-              className="font-caps min-h-8 px-3 text-sm text-muted underline decoration-accent2 decoration-dotted underline-offset-4"
-              onClick={() => {
-                sfx.tap(cur.soundId)
-                setShowRoller(true)
-              }}
-            >
-              🎲 Hodiť virtuálnymi kockami
-            </button>
-          )}
           <div className="relative h-0 text-xs text-accent">
             <AnimatePresence>
               {error && (
@@ -456,6 +453,27 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
           </div>
         </div>
 
+        {/* Hracia plocha: kocka, súčet ťahu, ťuknutia a cesta k cieľu */}
+        <Table
+          // keď je hráčov veľa alebo málo miesta, prednosť dostanú riadky hráčov
+          compact={fit >= 1 || n >= 4}
+          mini={fit >= 3}
+          favDie={favDie}
+          dieRef={dieRef}
+          playerKey={current.id}
+          value={value}
+          adds={adds}
+          total={d.totals[current.id]}
+          target={game.target}
+          minEntry={game.rules.minEntry}
+          fontClass={FONTS[cur.fontId].className}
+          canRoll={!d.finished}
+          onRoll={() => {
+            sfx.tap(cur.soundId)
+            setShowRoller(true)
+          }}
+        />
+
         {/* Klávesnica sa pri zmene hráča "prevráti" do jeho štýlu */}
         <motion.div
           key={current.id + cur.keypadId}
@@ -463,7 +481,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
           animate={{ opacity: 1, rotateX: 0, y: 0 }}
           transition={{ type: 'spring', stiffness: 380, damping: 28 }}
           style={{ transformPerspective: 700, paddingBottom: 'calc(max(env(safe-area-inset-bottom) - 16px, 0px) + 6px)' }}
-          className="mt-auto flex grow flex-col justify-end px-4 pt-2"
+          className="flex grow flex-col justify-end px-4 pt-2"
         >
           {/* veľké rýchle klávesy – všetky body pri kockách sú násobkom 50, číslice netreba */}
           <div className="grid max-h-[252px] min-h-[156px] grow basis-[156px] grid-cols-2 grid-rows-3 gap-1.5">
@@ -642,6 +660,142 @@ function RoundTable({ game, byId }: { game: ActiveGame; byId: (id: string) => Pi
           </tr>
         </tfoot>
       </table>
+    </div>
+  )
+}
+
+/**
+ * Stôl – stred obrazovky: obľúbená kocka hráča, súčet rozpísaného ťahu, z čoho sa skladá
+ * a ako sa po zápise posunie k cieľu. Zaberá všetko voľné miesto medzi hráčmi a klávesnicou.
+ */
+function Table({
+  compact,
+  mini,
+  favDie,
+  dieRef,
+  playerKey,
+  value,
+  adds,
+  total,
+  target,
+  minEntry,
+  fontClass,
+  canRoll,
+  onRoll,
+}: {
+  compact: boolean
+  /** najmenší displej: bez kocky a radu ťuknutí */
+  mini: boolean
+  favDie: DieDef | null
+  dieRef: React.RefObject<HTMLDivElement | null>
+  playerKey: string
+  value: number
+  adds: number[]
+  total: number
+  target: number
+  minEntry: number
+  fontClass: string
+  canRoll: boolean
+  onRoll: () => void
+}) {
+  const after = total + value
+  const left = Math.max(0, target - after)
+  const needEntry = minEntry > 0 && total === 0
+  const shown = adds.slice(-8)
+  const digits = (value ? `+${fmt(value)}` : '0').length
+
+  return (
+    <div className="flex min-h-0 grow flex-col justify-center px-4 pt-1">
+      <div className={`themed glass table-card relative mx-auto w-full ${compact ? 'px-3 pb-2 pt-2' : 'px-4 pb-3 pt-3'}`}>
+        {/* virtuálne kocky – v rohu stola, nezaberajú vlastný riadok */}
+        {canRoll && (
+          <button
+            className="table-chip font-caps absolute right-2 top-2 z-10 px-2.5 py-1 text-[12px] leading-tight"
+            onClick={onRoll}
+            aria-label="Hodiť virtuálnymi kockami"
+          >
+            🎲 hodiť
+          </button>
+        )}
+        <div className="flex items-center gap-3">
+          {/* obľúbená kocka hráča na ťahu z Klenotnice – jemne levituje nad stolom */}
+          {favDie && !mini && (
+            <motion.div key={playerKey} initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 260, damping: 16 }}>
+              <div className={`levitate grid place-items-center ${compact ? 'h-[52px] w-[56px]' : 'h-[76px] w-[80px]'}`} ref={dieRef}>
+                <Die3D die={favDie} size={compact ? 38 : 56} idle />
+              </div>
+            </motion.div>
+          )}
+          <div className="min-w-0 flex-1 text-center">
+            {!mini && <div className="font-caps text-[11px] uppercase tracking-[0.18em] text-muted">tento ťah</div>}
+            <motion.div
+              key={value}
+              initial={{ scale: 1.1 }}
+              animate={{ scale: 1 }}
+              className={`num-weight tabular whitespace-nowrap leading-none ${value ? 'text-accent' : 'text-faint'} ${fontClass}`}
+              // dlhšie číslo (+10 050) sa zmenší, aby sa nezalomilo ani v širších písmach
+              // (písma Krieda/Digitálne majú vlastnú mierku, inline veľkosť by ju prebila)
+              style={{ fontSize: (compact ? 46 : 60) * (digits <= 4 ? 1 : digits <= 6 ? 0.84 : 0.7) * (fontClass === 'score-chalk' ? 1.3 : fontClass === 'score-led' ? 0.82 : 1) }}
+            >
+              {value ? `+${fmt(value)}` : '0'}
+            </motion.div>
+          </div>
+          {favDie && !mini && <div className={compact ? 'w-[56px]' : 'w-[80px]'} />}
+        </div>
+
+        {/* z čoho sa ťah skladá */}
+        <div className={`flex flex-wrap items-center justify-center gap-1 ${mini ? 'hidden' : compact ? 'mt-1 min-h-[22px]' : 'mt-2 min-h-[26px]'}`}>
+          {adds.length === 0 ? (
+            <span className="text-xs italic text-muted">Ťukaj +50, +100… a zapíš do kroniky</span>
+          ) : (
+            <>
+              {adds.length > shown.length && <span className="text-xs text-muted">…</span>}
+              {shown.map((n, i) => (
+                <motion.span
+                  key={`${adds.length - shown.length + i}-${n}`}
+                  initial={{ scale: 0.4, opacity: 0, y: -6 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 22 }}
+                  className="table-chip tabular px-2 py-0.5 text-[13px] leading-tight"
+                >
+                  +{fmt(n)}
+                </motion.span>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* cesta k cieľu: plná časť = body hráča, svetlejšia = čo pribudne zápisom */}
+        <div className={compact ? 'mt-1.5' : 'mt-2.5'}>
+          <div className="relative h-2 overflow-hidden bg-track">
+            <motion.div className="bar-fill absolute inset-y-0 left-0" initial={false} animate={{ width: `${Math.min(1, total / target) * 100}%` }} />
+            <motion.div
+              className="absolute inset-y-0 bg-accent2 opacity-60"
+              initial={false}
+              animate={{ left: `${Math.min(1, total / target) * 100}%`, width: `${Math.max(0, Math.min(1, after / target) - Math.min(1, total / target)) * 100}%` }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            />
+          </div>
+          <div className="lining mt-1 flex items-baseline justify-between gap-2 text-[13px]">
+            <span className="tabular truncate">
+              <b className="num-weight">{fmt(total)}</b>
+              {value > 0 && (
+                <>
+                  {' '}→ <b className="num-weight text-accent">{fmt(after)}</b>
+                </>
+              )}
+            </span>
+            <span className="shrink-0 text-muted">
+              {needEntry && value < minEntry
+                ? `na vstup treba ${fmt(minEntry)}`
+                : left === 0
+                  ? '🏁 prekročí cieľ!'
+                  : `do ${fmt(target)} chýba ${fmt(left)}`}
+            </span>
+          </div>
+        </div>
+      </div>
+
     </div>
   )
 }
