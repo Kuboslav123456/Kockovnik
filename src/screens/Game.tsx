@@ -20,8 +20,6 @@ import { profileDie } from '../lib/forge'
 
 // body sa zapisujú hlavne rýchlymi klávesmi; +5000 = postupka
 const QUICK = [50, 100, 500, 1000, 5000]
-// 1–3 sa pri kockách skoro nepíšu (všetko je násobok 50), preto ich riadok vypadol
-const KEYS = ['4', '5', '6', '7', '8', '9', '00', '0', '⌫']
 
 const UNKNOWN: Omit<Profile, 'id'> = {
   name: '?', avatar: '❔', xp: 0, achievements: [], themeId: 'manuscript', titleId: null, effectId: 'confetti',
@@ -75,7 +73,8 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
   // odomknuté veci hráča na ťahu – vidia ich všetci pri stole
   const cur = cosmetics(current)
 
-  const [input, setInput] = useState('')
+  // rozpísaný ťah = súčet ťuknutí na rýchle klávesy; zásobník umožní ubrať posledné ťuknutie
+  const [adds, setAdds] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
   const [flash, setFlash] = useState<{ playerId: string; points: number; key: number; burst: BurstId } | null>(null)
   const [zero, setZero] = useState<{ playerId: string; key: number } | null>(null)
@@ -89,7 +88,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
   const screen = useAnimationControls()
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
-  const value = Number(input || 0)
+  const value = Math.min(999999, adds.reduce((a, n) => a + n, 0))
   const favDie = profileDie(current)
   const manuscript = THEMES[cur.themeId].style === 'manuscript'
   // nízky displej (napr. iPhone SE): menšia kocka a číslo, aby sa zmestili hráči aj celá klávesnica
@@ -151,19 +150,20 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
     void shake.start({ x: [0, -10, 10, -7, 7, -3, 0], transition: { duration: 0.4 } })
   }
 
-  const press = (k: string) => {
-    sfx.tap(cur.soundId)
-    if (k === '⌫') return setInput((s) => s.slice(0, -1))
-    setInput((s) => {
-      const next = (s === '0' ? '' : s) + k
-      const clean = next.replace(/^0+/, '')
-      return clean.length > 6 ? s : clean
-    })
-  }
-
   const quick = (n: number) => {
     sfx.tap(cur.soundId)
-    setInput((s) => String(Math.min(999999, Number(s || 0) + n)))
+    setAdds((a) => [...a, n])
+  }
+
+  /** uberie posledné ťuknutie (napr. omylom +500 namiesto +50) */
+  const unadd = () => {
+    sfx.undo(cur.soundId)
+    setAdds((a) => a.slice(0, -1))
+  }
+
+  const clear = () => {
+    sfx.undo(cur.soundId)
+    setAdds([])
   }
 
   const commit = (points: number) => {
@@ -190,7 +190,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
       }
     }
     addTurn(points)
-    setInput('')
+    setAdds([])
   }
 
   const undo = () => {
@@ -199,7 +199,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
     setFlash(null)
     setZero(null)
     undoTurn()
-    setInput('')
+    setAdds([])
   }
 
   const winner = d.winnerId ? byId(d.winnerId) : null
@@ -277,7 +277,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
       <div
         className="no-scrollbar mx-[18px] mt-2.5 flex shrink flex-col gap-0.5 overflow-y-auto"
         // aspoň 2–3 riadky hráčov; na malom displeji menej, aby klávesnica nikdy nevypadla z obrazovky
-        style={{ minHeight: `min(${60 + (Math.min(game.playerIds.length, 3) - 1) * 51}px, max(58px, calc(100dvh - ${compact ? 512 : 552}px)))` }}
+        style={{ minHeight: `min(${60 + (Math.min(game.playerIds.length, 3) - 1) * 51}px, max(58px, calc(100dvh - ${compact ? 526 : 566}px)))` }}
       >
         {game.playerIds.map((id, i) => {
           const p = byId(id)
@@ -465,27 +465,28 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
           style={{ transformPerspective: 700, paddingBottom: 'calc(max(env(safe-area-inset-bottom) - 16px, 0px) + 6px)' }}
           className="mt-auto flex grow flex-col justify-end px-4 pt-2"
         >
-          {/* najpoužívanejšie riadky (+50… a zápis) sa natiahnu do voľného miesta, čísla ostanú rovnaké */}
-          <div className="grid max-h-20 min-h-12 grow basis-12 grid-cols-5 gap-1.5">
+          {/* veľké rýchle klávesy – všetky body pri kockách sú násobkom 50, číslice netreba */}
+          <div className="grid max-h-[252px] min-h-[156px] grow basis-[156px] grid-cols-2 grid-rows-3 gap-1.5">
             {QUICK.map((q) => (
               <Key
                 key={q}
                 skin={cur.keypadId}
-                className={`key-quick tabular flex flex-col items-center justify-center whitespace-nowrap px-0.5 font-semibold leading-none ${q === 5000 ? 'key-straight' : ''} ${compact ? 'text-[19px]' : 'text-[21px]'}`}
+                className={`key-quick tabular flex items-center justify-center gap-2 whitespace-nowrap px-2 font-semibold leading-none ${q === 5000 ? 'key-straight col-span-2' : ''} ${compact ? 'text-[24px]' : 'text-[28px]'}`}
                 onClick={() => quick(q)}
                 aria-label={q === 5000 ? '+5000 postupka' : `+${q}`}
               >
-                +{q}
-                {q === 5000 && <span className="mt-0.5 text-[9px] font-normal uppercase tracking-wider opacity-75">postupka</span>}
+                +{fmt(q)}
+                {q === 5000 && <span className="text-[13px] font-normal uppercase tracking-wider opacity-75">· postupka</span>}
               </Key>
             ))}
           </div>
-          <div className="mt-1.5 grid max-h-[182px] min-h-[138px] grow-[2] basis-[138px] grid-cols-3 gap-1.5">
-            {KEYS.map((k) => (
-              <Key key={k} skin={cur.keypadId} className="min-h-11 text-2xl font-semibold" onClick={() => press(k)} aria-label={k === '⌫' ? 'Zmazať' : k}>
-                {k}
-              </Key>
-            ))}
+          <div className="mt-1.5 grid h-11 shrink-0 grid-cols-2 gap-1.5">
+            <Key skin={cur.keypadId} className="key-action whitespace-nowrap px-1 text-[15px]" disabled={!adds.length} onClick={unadd} aria-label="Ubrať posledné">
+              ⌫ uber posledné
+            </Key>
+            <Key skin={cur.keypadId} className="key-action whitespace-nowrap px-1 text-[15px]" disabled={!adds.length} onClick={clear} aria-label="Vynulovať">
+              ✕ vynuluj
+            </Key>
           </div>
           <div className="mt-3 grid max-h-20 min-h-12 grow basis-12 grid-cols-[1fr_1fr_1.7fr] gap-1.5">
             <Key skin={cur.keypadId} className="key-action whitespace-nowrap px-1 text-[16px]" disabled={!game.turns.length} onClick={undo}>
