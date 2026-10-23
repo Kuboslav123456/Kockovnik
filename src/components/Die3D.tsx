@@ -44,7 +44,8 @@ function CssDie({ die, size = 64, idle = false, speed = 1 }: Props) {
   if (!idle) {
     return (
       <Shell die={die} size={size}>
-        <Cube die={die} size={size} style={{ transform: 'rotateX(-24deg) rotateY(36deg)' }} />
+        {/* stojaca kocka: pri tomto natočení sú vidieť len steny 1, 3 a 5 – ostatné netreba kresliť */}
+        <Cube die={die} size={size} only={STATIC_FACES} style={{ transform: 'rotateX(-24deg) rotateY(36deg)' }} />
       </Shell>
     )
   }
@@ -185,15 +186,17 @@ const SPARKS = [
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI']
 
-function Cube({ die, size, style, className }: { die: DieDef; size: number; style?: CSSProperties; className?: string }) {
+const STATIC_FACES = [1, 3, 5]
+
+function Cube({ die, size, style, className, only }: { die: DieDef; size: number; style?: CSSProperties; className?: string; only?: number[] }) {
   return (
     <div className={className} style={{ width: size, height: size, position: 'relative', transformStyle: 'preserve-3d', ...style }}>
-      <Faces die={die} size={size} />
+      <Faces die={die} size={size} only={only} />
     </div>
   )
 }
 
-function Faces({ die, size }: { die: DieDef; size: number }) {
+function Faces({ die, size, only }: { die: DieDef; size: number; only?: number[] }) {
   const half = size / 2
   const faces: { n: number; t: string }[] = [
     { n: 1, t: `translateZ(${half}px)` },
@@ -202,7 +205,7 @@ function Faces({ die, size }: { die: DieDef; size: number }) {
     { n: 5, t: `rotateY(-90deg) translateZ(${half}px)` },
     { n: 3, t: `rotateX(90deg) translateZ(${half}px)` },
     { n: 4, t: `rotateX(-90deg) translateZ(${half}px)` },
-  ]
+  ].filter((f) => !only || only.includes(f.n))
   return (
     <>
       {faces.map((f) => (

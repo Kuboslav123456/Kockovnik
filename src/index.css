@@ -87,12 +87,18 @@ input {
   -webkit-user-select: text;
 }
 
-/* Všetko tematické plynule mení farby pri zmene témy */
-.themed,
-.themed * {
-  transition-property: background-color, border-color, color, box-shadow, fill, stroke;
-  transition-duration: 600ms;
-  transition-timing-function: ease;
+/* Karty a tlačidlá plynule zmenia farbu pri zmene témy.
+   Len samotné .themed prvky (nie všetci potomkovia) a bez tieňov – prefarbovanie stoviek
+   prvkov naraz pri každom striedaní hráčov bolo hlavnou príčinou trhania animácií. */
+.themed {
+  transition-property: background-color, border-color, color;
+  transition-duration: 350ms;
+  transition-timing-function: ease-out;
+}
+
+html {
+  /* ťuknutie reaguje okamžite (bez čakania na dvojklik / priblíženie) */
+  touch-action: manipulation;
 }
 
 .glass {
@@ -256,7 +262,9 @@ input {
 /* ---------- Klávesnice (odomykateľné) ---------- */
 .key {
   border-radius: 0.85rem;
-  transition: background 500ms, box-shadow 500ms, color 500ms, border-color 500ms;
+  transition: background-color 150ms, color 150ms, border-color 150ms;
+  /* vlastná vrstva – stlačenie (zmenšenie) nepreráta zvyšok obrazovky */
+  will-change: transform;
 }
 .key-classic {
   background: linear-gradient(var(--t-surface), var(--t-surface)), rgba(0, 0, 0, 0.16);

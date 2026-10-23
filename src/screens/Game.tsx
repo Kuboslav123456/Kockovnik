@@ -118,7 +118,7 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
     const visible = rows.filter((r) => r.offsetTop - base + r.offsetHeight <= list.clientHeight + 1).length
     if (visible < Math.min(n, 3)) bumpFit()
   }
-  useLayoutEffect(() => checkFit.current())
+  useLayoutEffect(() => checkFit.current(), [n, fit, d.finalRound, game.turns.length]) // eslint-disable-line react-hooks/exhaustive-deps
   // riadky sa zväčšia aj neskôr (načítanie písma, pás posledného kola) – vtedy treba merať znova
   useEffect(() => {
     const list = listRef.current
@@ -325,8 +325,6 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
               ref={(el) => {
                 rowRefs.current[id] = el
               }}
-              layout
-              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
               className={`themed relative flex shrink-0 items-center gap-2.5 px-3 ${active ? 'py-2.5' : 'py-2'} ${!active && !last ? 'border-b border-rule' : ''}`}
               style={{
                 background: active ? 'var(--t-surface-strong)' : undefined,
@@ -477,10 +475,10 @@ function GameView({ game, profiles }: { game: ActiveGame; profiles: Profile[] })
         {/* Klávesnica sa pri zmene hráča "prevráti" do jeho štýlu */}
         <motion.div
           key={current.id + cur.keypadId}
-          initial={game.turns.length ? { opacity: 0.4, rotateX: -30, y: 10 } : false}
-          animate={{ opacity: 1, rotateX: 0, y: 0 }}
-          transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-          style={{ transformPerspective: 700, paddingBottom: 'calc(max(env(safe-area-inset-bottom) - 16px, 0px) + 6px)' }}
+          initial={game.turns.length ? { opacity: 0.5, y: 14 } : false}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 32, mass: 0.8 }}
+          style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom) - 16px, 0px) + 6px)' }}
           className="flex grow flex-col justify-end px-4 pt-2"
         >
           {/* veľké rýchle klávesy – všetky body pri kockách sú násobkom 50, číslice netreba */}

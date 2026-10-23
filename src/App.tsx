@@ -25,10 +25,11 @@ export default function App() {
   )
 }
 
+// Prechod obrazoviek: len posun a priehľadnosť (bez zmenšovania celej obrazovky – to je drahé)
 const variants = {
-  enter: (dir: number) => ({ x: dir > 0 ? '28%' : '-28%', opacity: 0, scale: 0.98 }),
-  center: { x: 0, opacity: 1, scale: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? '-20%' : '20%', opacity: 0, scale: 0.98 }),
+  enter: (dir: number) => ({ x: dir > 0 ? '22%' : '-22%', opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? '-14%' : '14%', opacity: 0 }),
 }
 
 function Shell() {
@@ -67,7 +68,8 @@ function Shell() {
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ type: 'spring', stiffness: 320, damping: 34, opacity: { duration: 0.22 } }}
+          transition={{ x: { type: 'tween', duration: 0.32, ease: [0.22, 1, 0.36, 1] }, opacity: { duration: 0.22, ease: 'easeOut' } }}
+          style={{ willChange: 'transform, opacity' }}
           className="themed no-scrollbar fixed inset-0 overflow-y-auto overflow-x-hidden"
         >
           <RouteView route={route} />

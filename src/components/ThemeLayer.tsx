@@ -38,7 +38,8 @@ export function ThemeLayer({ themeId, dice }: { themeId: ThemeId; dice?: boolean
           {theme.overlay && (
             <div
               className="absolute inset-0"
-              style={{ backgroundImage: theme.overlay, backgroundSize: theme.overlaySize, mixBlendMode: theme.scheme === 'light' ? 'multiply' : undefined, opacity: theme.scheme === 'light' ? 0.5 : 1 }}
+              // bez mix-blend-mode: prelínanie s celou obrazovkou by mobil prepočítaval pri každej animácii
+              style={{ backgroundImage: theme.overlay, backgroundSize: theme.overlaySize, opacity: theme.scheme === 'light' ? 0.32 : 1 }}
             />
           )}
           {theme.decor === 'stars' && <Stars />}
@@ -57,7 +58,7 @@ export function ThemeLayer({ themeId, dice }: { themeId: ThemeId; dice?: boolean
 function Stars() {
   const stars = useMemo(
     () =>
-      Array.from({ length: 70 }, (_, i) => ({
+      Array.from({ length: 45 }, (_, i) => ({
         id: i,
         x: Math.random() * 100,
         y: Math.random() * 100,
