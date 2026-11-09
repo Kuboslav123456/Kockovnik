@@ -69,7 +69,6 @@ function Shell() {
           animate="center"
           exit="exit"
           transition={{ x: { type: 'tween', duration: 0.32, ease: [0.22, 1, 0.36, 1] }, opacity: { duration: 0.22, ease: 'easeOut' } }}
-          style={{ willChange: 'transform, opacity' }}
           className="themed no-scrollbar fixed inset-0 overflow-y-auto overflow-x-hidden"
         >
           <RouteView route={route} />

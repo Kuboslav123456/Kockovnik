@@ -1,10 +1,13 @@
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 /** Spodný panel – zavrie sa ťuknutím mimo alebo potiahnutím nadol. */
 export function Sheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title?: string; children: ReactNode }) {
   const drag = useDragControls()
-  return (
+  // portál do <body>: obrazovka sa pri prechodoch posúva (transform) a `fixed` by sa inak
+  // viazal na začiatok stránky – panel by sa pri odrolovanej stránke otvoril mimo obrazu
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div className="fixed inset-0 z-40 flex items-end justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -33,6 +36,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }
